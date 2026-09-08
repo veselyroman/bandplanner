@@ -1,0 +1,312 @@
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    padding:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f2f4f7;
+    color:#333;
+}
+
+/* LOGIN */
+
+.card{
+
+    width:350px;
+
+    max-width:95%;
+
+    margin:40px auto;
+
+    padding:20px;
+
+    background:white;
+
+    border-radius:12px;
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card h1{
+    text-align:center;
+    margin-bottom:25px;
+}
+
+/* FORMULÁŘE */
+
+input,
+select,
+textarea{
+
+    width:100%;
+
+    padding:10px;
+
+    margin-bottom:10px;
+
+    border:1px solid #d0d7de;
+
+    border-radius:6px;
+
+    font-size:14px;
+}
+
+textarea{
+
+    min-height:100px;
+
+    resize:vertical;
+}
+
+/* TLAČÍTKA */
+
+button{
+
+    padding:10px 15px;
+
+    border:none;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+    margin-right:5px;
+
+    margin-top:5px;
+}
+
+button:hover{
+    opacity:0.9;
+}
+
+/* LOGIN BUTTON */
+
+.card button{
+
+    width:100%;
+
+    background:#1565c0;
+
+    color:white;
+}
+
+/* HEADER */
+
+header{
+
+    background:#1f2937;
+
+    color:white;
+
+    padding:15px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    flex-wrap:wrap;
+}
+
+header h2{
+    margin:0;
+}
+
+header button{
+
+    background:#c62828;
+
+    color:white;
+}
+
+/* MENU */
+
+.tabs{
+
+    background:white;
+
+    padding:10px;
+
+    border-bottom:1px solid #ddd;
+}
+
+.tabs button{
+
+    background:#e5e7eb;
+
+    margin-bottom:5px;
+}
+
+.tabs button:hover{
+
+    background:#d1d5db;
+}
+
+/* SEKCE */
+
+#mineSection,
+#othersSection,
+#authorSection,
+#newSection{
+
+    padding:15px;
+}
+
+h3{
+
+    margin-top:0;
+}
+
+/* KARTA NÁVRHU */
+
+.proposal{
+
+    background:white;
+
+    border-radius:10px;
+
+    padding:15px;
+
+    margin-bottom:15px;
+
+    box-shadow:
+        0 2px 6px rgba(0,0,0,0.08);
+
+    border-left:5px solid #1565c0;
+}
+
+/* STAV */
+
+.waiting{
+
+    margin-top:10px;
+
+    font-size:14px;
+
+    color:#666;
+}
+
+/* SCHVÁLIT */
+
+.approve{
+
+    background:#2e7d32;
+
+    color:white;
+}
+
+/* ZAMÍTNOUT */
+
+.reject{
+
+    background:#c62828;
+
+    color:white;
+}
+
+/* POTVRDIT I TAK */
+
+.confirm-final{
+
+    background:#1565c0;
+
+    color:white;
+}
+
+/* ZRUŠIT NÁVRH */
+
+.cancel-final{
+
+    background:#757575;
+
+    color:white;
+}
+
+/* ÚČASTNÍCI */
+
+.participants{
+
+    margin-top:10px;
+
+    padding:10px;
+
+    background:#f8f9fb;
+
+    border-radius:6px;
+}
+
+.participants b{
+
+    display:block;
+
+    margin-top:8px;
+}
+
+.participants ul{
+
+    margin:5px 0 5px 20px;
+}
+
+/* DEMO ÚČTY */
+
+.demo-users{
+
+    margin-top:20px;
+
+    font-size:13px;
+
+    color:#666;
+
+    line-height:1.5;
+}
+
+/* INFO BOX */
+
+.info{
+
+    padding:10px;
+
+    background:#eef5ff;
+
+    border-left:4px solid #1565c0;
+
+    border-radius:6px;
+
+    margin-bottom:10px;
+}
+
+/* RESPONSIVE */
+
+@media(max-width:768px){
+
+    header{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+    }
+
+    .tabs button{
+
+        width:100%;
+
+        margin-bottom:5px;
+    }
+
+    button{
+
+        width:100%;
+    }
+
+    .approve,
+    .reject,
+    .confirm-final,
+    .cancel-final{
+
+        margin-bottom:8px;
+    }
+}

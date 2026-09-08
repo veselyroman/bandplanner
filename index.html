@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BandPlanner</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1565c0">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- LOGIN -->
+
+    <div id="loginScreen" class="card">
+
+        <h1>BandPlanner</h1>
+
+        <input
+            id="username"
+            placeholder="Uživatelské jméno">
+
+        <input
+            id="password"
+            type="password"
+            placeholder="Heslo">
+
+        <button onclick="login()">
+            Přihlásit
+        </button>
+
+        <div class="demo-users">
+
+            <b>Demo účty:</b><br><br>
+
+            Roman / 1234<br>
+            Pepa / 1234<br>
+            Jarda / 1234<br>
+            Karel / 1234
+
+        </div>
+
+    </div>
+
+    <!-- APLIKACE -->
+
+    <div id="appScreen" style="display:none;">
+
+        <header>
+
+            <h2>BandPlanner</h2>
+
+            <div>
+
+		Přihlášen:
+		<span id="currentUser"></span>
+
+		(
+		<span id="currentRole"></span>
+		)
+
+                <button onclick="logout()">
+                    Odhlásit
+                </button>
+
+            </div>
+
+        </header>
+
+        <!-- MENU -->
+
+        <div class="tabs">
+
+	    <button onclick="showSection('calendar')">
+		    Kalendář
+	    </button>
+
+	<button
+	    id="mineTab"
+	    onclick="showSection('mine')">
+	    Čeká na moje vyjádření
+	</button>
+
+            <button onclick="showSection('others')">
+                Čeká na ostatní
+            </button>
+
+	<button
+	    id="authorTab"
+	    onclick="showSection('author')">
+	    Čeká na rozhodnutí autora
+	</button>
+
+            <button onclick="showSection('new')">
+                Nový návrh
+            </button>
+
+	<button onclick="showSection('profile')">
+	    Profil
+	</button>
+
+	<button
+	    id="usersTab"
+	    onclick="showSection('users')"
+	    style="display:none;">
+	    Uživatelé
+	</button>
+
+        </div>
+
+        <!-- MOJE HLASOVÁNÍ -->
+
+        <div id="mineSection">
+
+            <h3>
+                Čeká na moje vyjádření
+            </h3>
+
+            <div id="mineList"></div>
+
+        </div>
+
+        <!-- ČEKÁ NA OSTATNÍ -->
+
+        <div id="othersSection" style="display:none;">
+
+            <h3>
+                Čeká na ostatní
+            </h3>
+
+            <div id="othersList"></div>
+
+        </div>
+
+        <!-- ROZHODNUTÍ AUTORA -->
+
+        <div id="authorSection" style="display:none;">
+
+            <h3>
+                Návrhy čekající na rozhodnutí autora
+            </h3>
+
+            <div id="authorList"></div>
+
+        </div>
+
+	<!-- KALENDÁŘ -->
+	<div id="calendarSection" style="display:none;">
+	    <h3>
+	        Kalendář
+	    </h3>
+
+	    <div id="calendarList"></div>
+	</div>
+
+<!-- PROFIL -->
+<div id="profileSection" style="display:none;">
+    <h3>Profil uživatele</h3>
+
+    <div id="profileInfo"></div>
+
+    <br>
+
+    <input
+        id="newPassword1"
+        type="password"
+        placeholder="Nové heslo">
+
+    <input
+        id="newPassword2"
+        type="password"
+        placeholder="Potvrzení hesla">
+
+    <button onclick="changePassword()">
+        Změnit heslo
+    </button>
+</div>
+
+
+
+<!-- UŽIVATELÉ -->
+<div id="usersSection" style="display:none;">
+
+    <h3>
+        Uživatelé
+    </h3>
+
+    <div id="usersList"></div>
+
+    <button onclick="showAddUserForm()">
+        Přidat uživatele
+    </button>
+
+    <div
+        id="addUserForm"
+        style="display:none; margin-top:15px;">
+
+        <input
+            id="newUsername"
+            placeholder="Uživatelské jméno">
+
+        <input
+            id="newPassword"
+            placeholder="Heslo">
+
+        <select id="newRole">
+
+            <option value="member">
+                Člen
+            </option>
+
+            <option value="admin">
+                Administrátor
+            </option>
+
+        </select>
+
+        <button onclick="addUser()">
+            Uložit
+        </button>
+
+    </div>
+
+</div>
+
+        <!-- NOVÝ NÁVRH -->
+
+        <div id="newSection" style="display:none;">
+
+            <h3>
+                Nový návrh
+            </h3>
+
+	<select id="eventType" onchange="updateEndTime()">
+
+                <option value="Zkouška">
+                    Zkouška
+                </option>
+
+                <option value="Koncert">
+                    Koncert
+                </option>
+
+            </select>
+
+            <input
+                id="eventDate"
+                type="date">
+
+	<label>Začátek:</label>
+	<input
+	    id="eventStartTime"
+	    type="time"
+	    onchange="updateEndTime()">
+
+	<label>Konec:</label>
+	<input
+	    id="eventEndTime"
+	    type="time">
+
+            <input
+                id="eventLocation"
+                placeholder="Místo">
+
+            <textarea
+                id="eventNote"
+                placeholder="Poznámka"></textarea>
+
+            <button onclick="createProposal()">
+                Uložit návrh
+            </button>
+
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+
+<script>
+if ("serviceWorker" in navigator) {
+navigator.serviceWorker.register("service-worker.js");
+}
+</script>
+
+</body>
+</html>
