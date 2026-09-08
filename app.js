@@ -778,16 +778,19 @@ function deleteEvent(id) {
    UŽIVATELÉ
 =========================== */
 
-function refreshUsers() {
+async function refreshUsers() {
 
-    const list =
-        document.getElementById(
-            "usersList"
-        );
+const list =
+    document.getElementById(
+        "usersList"
+    );
 
-    list.innerHTML = "";
+list.innerHTML = "";
 
-    users.forEach(user => {
+const usersFromFirebase =
+    await firebaseGetUsers();
+
+usersFromFirebase.forEach(user => {
 
 	list.innerHTML += `
 	    <div class="proposal">

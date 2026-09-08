@@ -6,7 +6,10 @@ import {
     addDoc,
     getDocs,
     query,
-    where
+    where,
+    doc,
+    deleteDoc,
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -112,4 +115,25 @@ window.firebaseLogin = async function (
     }
 
     return snapshot.docs[0].data();
+};
+
+window.firebaseGetUsers = async function () {
+
+    const snapshot =
+        await getDocs(
+            collection(db, "users")
+        );
+
+    const result = [];
+
+    snapshot.forEach(docItem => {
+
+        result.push({
+            id: docItem.id,
+            ...docItem.data()
+        });
+
+    });
+
+    return result;
 };
