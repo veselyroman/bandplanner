@@ -22,3 +22,33 @@ export {
     collection,
     addDoc
 };
+
+import {
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+window.firebaseTest = async function () {
+
+    try {
+
+        await addDoc(
+            collection(db, "test"),
+            {
+                message: "BandPlanner connected",
+                created: serverTimestamp()
+            }
+        );
+
+        alert(
+            "Zápis do Firebase proběhl úspěšně."
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Firebase chyba. Zkontroluj konzoli."
+        );
+    }
+};
