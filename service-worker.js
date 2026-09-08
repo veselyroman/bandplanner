@@ -1,4 +1,4 @@
-const CACHE_NAME = "bandplanner-v1";
+const CACHE_NAME = "bandplanner-v2";
 
 const urlsToCache = [
     "./",

@@ -1181,6 +1181,29 @@ END:VCALENDAR`;
     document.body.removeChild(a);
 
     URL.revokeObjectURL(url);
+let exportedEvents =
+    JSON.parse(
+        localStorage.getItem(
+            "bandplanner_calendar_exports"
+        )
+    ) || {};
+
+if (!exportedEvents[currentUser]) {
+    exportedEvents[currentUser] = [];
+}
+
+if (
+    !exportedEvents[currentUser].includes(id)
+) {
+    exportedEvents[currentUser].push(id);
+}
+
+localStorage.setItem(
+    "bandplanner_calendar_exports",
+    JSON.stringify(exportedEvents)
+);
+refreshLists();
+
 }
 
 function refreshTabNotifications() {
@@ -1244,6 +1267,13 @@ function refreshLists() {
 
     const authorList =
 	    document.getElementById("authorList");
+
+const exportedEvents =
+    JSON.parse(
+        localStorage.getItem(
+            "bandplanner_calendar_exports"
+        )
+    ) || {};
 
     const calendarList =
 	    document.getElementById("calendarList");
@@ -1566,12 +1596,22 @@ if (p.status === "approved") {
 
 <br>
 
-<button
-    class="approve"
-    onclick="downloadCalendarEvent(${p.id})">
-    📅 Přidat do kalendáře
-</button>
-
+${
+    exportedEvents[currentUser] &&
+    exportedEvents[currentUser].includes(p.id)
+        ? `
+            <div class="info">
+                ✅ Zřejmě jsi si už přidal do kalendáře.
+            </div>
+          `
+        : `
+            <button
+                class="approve"
+                onclick="downloadCalendarEvent(${p.id})">
+                📅 Přidat do kalendáře
+            </button>
+          `
+}
 <br><br>
 
 		<div class="participants">
