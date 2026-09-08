@@ -3,7 +3,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebas
 import {
     getFirestore,
     collection,
-    addDoc
+    addDoc,
+    getDocs
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -50,5 +51,42 @@ window.firebaseTest = async function () {
         alert(
             "Firebase chyba. Zkontroluj konzoli."
         );
+    }
+};
+
+window.firebaseReadUsers = async function () {
+
+    try {
+
+        const snapshot =
+            await getDocs(
+                collection(db, "users")
+            );
+
+        console.log(
+            "===== Uživatelé z Firestore ====="
+        );
+
+        snapshot.forEach(doc => {
+
+            console.log(
+                doc.id,
+                doc.data()
+            );
+
+        });
+
+        alert(
+            "Uživatelé načteni. Podívej se do konzole."
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Chyba při čtení uživatelů."
+        );
+
     }
 };
