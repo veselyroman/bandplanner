@@ -1,9 +1,10 @@
-const CACHE_NAME = "bandplanner-v2";
+const CACHE_NAME = "bandplanner-v3";
 
 const urlsToCache = [
     "./",
     "./index.html",
     "./app.js",
+    "./firebase.js",
     "./styles.css",
     "./manifest.json"
 ];
