@@ -137,3 +137,106 @@ window.firebaseGetUsers = async function () {
 
     return result;
 };
+
+window.firebaseAddUser = async function (
+    username,
+    password,
+    role
+) {
+
+    await addDoc(
+        collection(db, "users"),
+        {
+            username,
+            password,
+            role
+        }
+    );
+
+};
+
+window.firebaseDeleteUser = async function (
+    username
+) {
+
+    const q = query(
+        collection(db, "users"),
+        where("username", "==", username)
+    );
+
+    const snapshot =
+        await getDocs(q);
+
+    for (const docItem of snapshot.docs) {
+
+        await deleteDoc(
+            doc(db, "users", docItem.id)
+        );
+
+    }
+};
+
+window.firebaseUpdateRole = async function (
+    username,
+    role
+) {
+
+    const q = query(
+        collection(db, "users"),
+        where("username", "==", username)
+    );
+
+    const snapshot =
+        await getDocs(q);
+
+    for (const docItem of snapshot.docs) {
+
+        await updateDoc(
+            doc(db, "users", docItem.id),
+            {
+                role
+            }
+        );
+
+    }
+};
+
+window.firebaseUpdatePassword =
+async function (
+    username,
+    password
+) {
+
+    const q = query(
+        collection(db, "users"),
+        where("username", "==", username)
+    );
+
+    const snapshot =
+        await getDocs(q);
+
+    for (const docItem of snapshot.docs) {
+
+        await updateDoc(
+            doc(db, "users", docItem.id),
+            {
+                password
+            }
+        );
+
+    }
+};
+
+window.firebaseUserExists =
+async function (username) {
+
+    const q = query(
+        collection(db, "users"),
+        where("username", "==", username)
+    );
+
+    const snapshot =
+        await getDocs(q);
+
+    return !snapshot.empty;
+};

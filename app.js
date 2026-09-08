@@ -815,7 +815,8 @@ usersFromFirebase.forEach(user => {
 		    class="approve"
 		    onclick="
 		        toggleUserRole(
-		            '${user.username}'
+		            '${user.username}',
+				'${user.role}'
 		        )
 		    ">
 
@@ -837,7 +838,7 @@ function showAddUserForm() {
     ).style.display = "block";
 }
 
-function addUser() {
+async function addUser() { 
 
     const username =
         document.getElementById(
@@ -863,12 +864,12 @@ function addUser() {
         return;
     }
 
-    const exists =
-        users.find(
-            u => u.username === username
-        );
+const exists =
+    await firebaseUserExists(
+        username
+    );
 
-    if (exists) {
+if (exists) {
 
         alert(
             "Uživatel již existuje."
@@ -877,13 +878,11 @@ function addUser() {
         return;
     }
 
-    users.push({
-
-        username,
-        password,
-        role
-
-    });
+await firebaseAddUser(
+    username,
+    password,
+    role
+);
 
 const today = new Date();
 
@@ -913,11 +912,7 @@ proposals.forEach(p => {
 
 });
 
-
-	saveData();
-
 	refreshUsers();
-
 	refreshLists();
 
     document.getElementById(
@@ -932,7 +927,7 @@ proposals.forEach(p => {
 /* ===========================
    SMAZAT UŽIVATELE
 =========================== */
-function deleteUser(username) {
+async function deleteUser(username) {
 
     if (!requireLogin()) return;
 
@@ -957,14 +952,9 @@ function deleteUser(username) {
 
     if (!confirmed) return;
 
-    const index =
-        users.findIndex(
-            u => u.username === username
-        );
-
-    if (index === -1) return;
-
-    users.splice(index, 1);
+await firebaseDeleteUser(
+    username
+);
 
 proposals.forEach(p => {
 
@@ -1003,7 +993,10 @@ refreshLists();
 /* ===========================
    ZMĚNIT ROLI
 =========================== */
-function toggleUserRole(username) {
+async function toggleUserRole(
+		username,
+		currentRole
+	) {
 
     if (!requireLogin()) return;
 
@@ -1011,33 +1004,28 @@ function toggleUserRole(username) {
         return;
     }
 
-    const user =
-        users.find(
-            u => u.username === username
-        );
-
-    if (!user) return;
-
-    if (user.username === currentUser) {
-
-        alert(
-            "Nelze měnit vlastní roli."
-        );
-
-        return;
-    }
-
-    user.role =
-        user.role === "admin"
-            ? "member"
-            : "admin";
-
-    saveData();
-    refreshUsers();
-
+if (username === currentUser) {
     alert(
-        "Role byla změněna."
+        "Nelze měnit vlastní roli."
     );
+    return;
+}
+
+const newRole =
+    currentRole === "admin"
+        ? "member"
+        : "admin";
+
+await firebaseUpdateRole(
+    username,
+    newRole
+);
+
+refreshUsers();
+
+alert(
+    "Role byla změněna."
+);
 }
 
 function refreshProfile() {
@@ -1060,7 +1048,7 @@ function refreshProfile() {
         `;
 }
 
-function changePassword() {
+async function changePassword() {
 
     if (!requireLogin()) return;
 
@@ -1092,19 +1080,10 @@ function changePassword() {
         return;
     }
 
-    const user =
-        users.find(
-           u =>
-                u.username === currentUser
-        );
-
-   if (!user) {
-        return;
-   }
-
-    user.password = password1;
-    saveData();
-
+await firebaseUpdatePassword(
+    currentUser,
+    password1
+);
     document.getElementById(
         "newPassword1"
    ).value = "";
