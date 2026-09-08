@@ -281,7 +281,7 @@ hours += durationHours;
     ).value = endTime;
 }
 
-function createProposal() {
+async function createProposal() {
 
     if (!requireLogin()) return;
 
@@ -369,9 +369,13 @@ if (startTime >= endTime) {
 	                u => u !== currentUser
 	            )
 	};
-    proposals.push(proposal);
+proposals.push(proposal);
 
-    saveData();
+await firebaseAddProposal(
+    proposal
+);
+
+saveData();
 
     document.getElementById("eventDate").value = "";
 	document.getElementById("eventStartTime").value = "";

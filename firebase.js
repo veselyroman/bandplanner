@@ -33,68 +33,6 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-window.firebaseTest = async function () {
-
-    try {
-
-        await addDoc(
-            collection(db, "test"),
-            {
-                message: "BandPlanner connected",
-                created: serverTimestamp()
-            }
-        );
-
-        alert(
-            "Zápis do Firebase proběhl úspěšně."
-        );
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert(
-            "Firebase chyba. Zkontroluj konzoli."
-        );
-    }
-};
-
-window.firebaseReadUsers = async function () {
-
-    try {
-
-        const snapshot =
-            await getDocs(
-                collection(db, "users")
-            );
-
-        console.log(
-            "===== Uživatelé z Firestore ====="
-        );
-
-        snapshot.forEach(doc => {
-
-            console.log(
-                doc.id,
-                doc.data()
-            );
-
-        });
-
-        alert(
-            "Uživatelé načteni. Podívej se do konzole."
-        );
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert(
-            "Chyba při čtení uživatelů."
-        );
-
-    }
-};
 
 window.firebaseLogin = async function (
     username,
@@ -239,4 +177,14 @@ async function (username) {
         await getDocs(q);
 
     return !snapshot.empty;
+};
+
+window.firebaseAddProposal =
+async function (proposal) {
+
+    await addDoc(
+        collection(db, "proposals"),
+        proposal
+    );
+
 };
