@@ -4,7 +4,9 @@ import {
     getFirestore,
     collection,
     addDoc,
-    getDocs
+    getDocs,
+    query,
+    where
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -89,4 +91,25 @@ window.firebaseReadUsers = async function () {
         );
 
     }
+};
+
+window.firebaseLogin = async function (
+    username,
+    password
+) {
+
+    const q = query(
+        collection(db, "users"),
+        where("username", "==", username),
+        where("password", "==", password)
+    );
+
+    const snapshot =
+        await getDocs(q);
+
+    if (snapshot.empty) {
+        return null;
+    }
+
+    return snapshot.docs[0].data();
 };

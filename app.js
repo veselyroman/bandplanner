@@ -77,7 +77,7 @@ function requireLogin() {
    LOGIN
 =========================== */
 
-function login() {
+async function login() {
 
     const username =
         document.getElementById("username").value.trim();
@@ -85,10 +85,10 @@ function login() {
     const password =
         document.getElementById("password").value;
 
-    const user = users.find(
-        u =>
-            u.username === username &&
-            u.password === password
+const user =
+    await firebaseLogin(
+        username,
+        password
     );
 
     if (!user) {
