@@ -35,9 +35,13 @@ let currentUser = null;
 
 let currentUserRole = null;
 
+let proposalsFromFirebase = [];
+
 let proposals =
     JSON.parse(
-        localStorage.getItem("bandplanner_proposals")
+        localStorage.getItem(
+            "bandplanner_proposals"
+        )
     ) || [];
 
 /* ===========================
@@ -324,17 +328,15 @@ if (startTime >= endTime) {
     return;
 }
 
-	const duplicate = proposals.find(p =>
-
-	    p.status !== "cancelled" &&
-
-	    p.type === type &&
-	    p.date === date &&
-	p.startTime === startTime &&
-	p.endTime === endTime &&
-	    p.location === location
-
-	);
+const duplicate =
+    proposalsFromFirebase.find(p =>
+        p.status !== "cancelled" &&
+        p.type === type &&
+        p.date === date &&
+        p.startTime === startTime &&
+        p.endTime === endTime &&
+        p.location === location
+    );
 
 	if (duplicate) {
 
@@ -344,6 +346,9 @@ if (startTime >= endTime) {
 
 	    return;
 	}
+
+const usersFromFirebase =
+    await firebaseGetUsers();
 
 	const proposal = {
 	    id: Date.now(),
@@ -363,7 +368,7 @@ if (startTime >= endTime) {
 	    participants: [],
 
 	    pendingUsers:
-	        users
+	        usersFromFirebase
 	            .map(u => u.username)
 	            .filter(
 	                u => u !== currentUser
@@ -418,12 +423,15 @@ function processVoting(proposal) {
    SCHVÁLENÍ
 =========================== */
 
-function approve(id) {
+async function approve(id) {
 
     if (!requireLogin()) return;
 
-    const proposal =
-        proposals.find(p => p.id === id);
+const proposal =
+    proposalsFromFirebase.find(
+        p =>
+            p.firestoreId === id
+    );
 
     if (!proposal) return;
 
@@ -446,6 +454,16 @@ function approve(id) {
 
     processVoting(proposal);
 
+await firebaseUpdateProposal(
+    proposal.firestoreId,
+    {
+        approved: proposal.approved,
+        pendingUsers: proposal.pendingUsers,
+        status: proposal.status,
+        participants: proposal.participants
+    }
+);
+
     saveData();
 
     refreshLists();
@@ -455,12 +473,15 @@ function approve(id) {
    ZAMÍTNUTÍ
 =========================== */
 
-function reject(id) {
+async function reject(id) {
 
     if (!requireLogin()) return;
 
-    const proposal =
-        proposals.find(p => p.id === id);
+const proposal =
+    proposalsFromFirebase.find(
+        p =>
+            p.firestoreId === id
+    );
 
     if (!proposal) return;
 
@@ -483,6 +504,15 @@ function reject(id) {
 
     processVoting(proposal);
 
+await firebaseUpdateProposal(
+    proposal.firestoreId,
+    {
+        rejected: proposal.rejected,
+        pendingUsers: proposal.pendingUsers,
+        status: proposal.status
+    }
+);
+
     saveData();
 
     refreshLists();
@@ -492,12 +522,15 @@ function reject(id) {
    POTVRDIT I TAK
 =========================== */
 
-function confirmAnyway(id) {
+async function confirmAnyway(id) {
 
     if (!requireLogin()) return;
 
-    const proposal =
-        proposals.find(p => p.id === id);
+const proposal =
+    proposalsFromFirebase.find(
+        p =>
+            p.firestoreId === id
+    );
 
     if (!proposal) return;
 
@@ -515,6 +548,14 @@ function confirmAnyway(id) {
     proposal.participants =
         [...proposal.approved];
 
+await firebaseUpdateProposal(
+    proposal.firestoreId,
+    {
+        status: proposal.status,
+        participants: proposal.participants
+    }
+);
+
     saveData();
 
     refreshLists();
@@ -524,12 +565,15 @@ function confirmAnyway(id) {
    ZRUŠIT NÁVRH
 =========================== */
 
-function cancelProposal(id) {
+async function cancelProposal(id) {
 
     if (!requireLogin()) return;
 
-    const proposal =
-        proposals.find(p => p.id === id);
+const proposal =
+    proposalsFromFirebase.find(
+        p =>
+            p.firestoreId === id
+    );
 
     if (!proposal) return;
 
@@ -544,6 +588,13 @@ function cancelProposal(id) {
 
     proposal.status = "cancelled";
 
+await firebaseUpdateProposal(
+    proposal.firestoreId,
+    {
+        status: "cancelled"
+    }
+);
+
     saveData();
 
     refreshLists();
@@ -552,12 +603,15 @@ function cancelProposal(id) {
 /* ===========================
    NAKONEC DORAZÍM
 =========================== */
-function attendAnyway(id) {
+async function attendAnyway(id) {
 
     if (!requireLogin()) return;
 
-    const proposal =
-        proposals.find(p => p.id === id);
+const proposal =
+    proposalsFromFirebase.find(
+        p =>
+            p.firestoreId === id
+    );
 
     if (!proposal) return;
 
@@ -589,6 +643,16 @@ function attendAnyway(id) {
             " nakonec dorazí."
     });
 
+await firebaseUpdateProposal(
+    proposal.firestoreId,
+    {
+        approved: proposal.approved,
+        rejected: proposal.rejected,
+        participants: proposal.participants,
+        messages: proposal.messages
+    }
+);
+
     saveData();
     refreshLists();
 
@@ -600,14 +664,15 @@ function attendAnyway(id) {
 /* ===========================
    NAKONEC NEDORAZÍM
 =========================== */
-function cannotAttendAnyway(id) {
+async function cannotAttendAnyway(id) {
 
     if (!requireLogin()) return;
 
-    const proposal =
-        proposals.find(
-            p => p.id === id
-        );
+const proposal =
+    proposalsFromFirebase.find(
+        p =>
+            p.firestoreId === id
+    );
 
     if (!proposal) return;
 
@@ -691,6 +756,16 @@ function cannotAttendAnyway(id) {
 
     });
 
+await firebaseUpdateProposal(
+    proposal.firestoreId,
+    {
+        approved: proposal.approved,
+        rejected: proposal.rejected,
+        participants: proposal.participants,
+        messages: proposal.messages
+    }
+);
+
     saveData();
     refreshLists();
 
@@ -702,19 +777,19 @@ function cannotAttendAnyway(id) {
 /* ===========================
    POTVRZENÍ NOTIFIKACE
 =========================== */
-function acknowledgeNotification(
+async function acknowledgeNotification(
     proposalId,
     notificationIndex
 ) {
 
     if (!requireLogin()) return;
 
-    const proposal =
-        proposals.find(
-            p => p.id === proposalId
-        );
+const proposal =
+    proposalsFromFirebase.find(
+        p => p.firestoreId === proposalId
+    );
 
-    if (!proposal) return;
+if (!proposal) return;
 
     if (
         proposal.createdBy !== currentUser
@@ -734,6 +809,13 @@ function acknowledgeNotification(
         1
     );
 
+await firebaseUpdateProposal(
+    proposal.firestoreId,
+    {
+        messages: proposal.messages
+    }
+);
+
     saveData();
     refreshLists();
 }
@@ -741,7 +823,7 @@ function acknowledgeNotification(
 /* ===========================
    SMAZAT AKCI
 =========================== */
-function deleteEvent(id) {
+async function deleteEvent(id) {
 
     if (!requireLogin()) return;
 
@@ -754,10 +836,11 @@ function deleteEvent(id) {
         return;
     }
 
-    const proposal =
-        proposals.find(
-            p => p.id === id
-        );
+const proposal =
+    proposalsFromFirebase.find(
+        p =>
+            p.firestoreId === id
+    );
 
     if (!proposal) return;
 
@@ -767,10 +850,9 @@ function deleteEvent(id) {
 
     if (!confirmed) return;
 
-    proposals =
-        proposals.filter(
-            p => p.id !== id
-        );
+await firebaseDeleteProposal(
+    proposal.firestoreId
+);
 
     saveData();
     refreshLists();
@@ -890,7 +972,7 @@ await firebaseAddUser(
 
 const today = new Date();
 
-proposals.forEach(p => {
+proposalsFromFirebase.forEach(p => {
 
     const eventDate =
         new Date(
@@ -960,7 +1042,7 @@ await firebaseDeleteUser(
     username
 );
 
-proposals.forEach(p => {
+proposalsFromFirebase.forEach(p => {
 
     p.approved =
         p.approved.filter(
@@ -1107,10 +1189,11 @@ await firebaseUpdatePassword(
 
 function downloadCalendarEvent(id) {
 
-    const proposal =
-        proposals.find(
-            p => p.id === id
-        );
+const proposal =
+    proposalsFromFirebase.find(
+        p =>
+            p.firestoreId === id
+    );
 
     if (!proposal) {
         return;
@@ -1197,7 +1280,7 @@ function refreshTabNotifications() {
     let mineCount = 0;
     let authorCount = 0;
 
-    proposals.forEach(p => {
+    proposalsFromFirebase.forEach(p => {
 
         const voted =
             p.approved.includes(currentUser) ||
@@ -1243,7 +1326,7 @@ function refreshTabNotifications() {
             : "Čeká na rozhodnutí autora";
 }
 
-function refreshLists() {
+async function refreshLists() {
 
     const mineList =
         document.getElementById("mineList");
@@ -1269,15 +1352,21 @@ const exportedEvents =
 	authorList.innerHTML = "";
 	calendarList.innerHTML = "";
 
-[...proposals]
+proposalsFromFirebase =
+    await firebaseGetProposals();
 
+[...proposalsFromFirebase]
     .sort((a, b) => {
 
         const dateA =
-            new Date(`${a.date}T${a.startTime}`);
+            new Date(
+                `${a.date}T${a.startTime}`
+            );
 
         const dateB =
-            new Date(`${b.date}T${b.startTime}`);
+            new Date(
+                `${b.date}T${b.startTime}`
+            );
 
         return dateA - dateB;
 
@@ -1336,7 +1425,7 @@ const exportedEvents =
 		${p.note}<br><br>
                 <button
                     class="approve"
-                    onclick="approve(${p.id})">
+                    onclick="approve('${p.firestoreId}')">
 
                     Schválit
 
@@ -1344,7 +1433,7 @@ const exportedEvents =
 
                 <button
                     class="reject"
-                    onclick="reject(${p.id})">
+                    onclick="reject('${p.firestoreId}')">
 
                     Zamítnout
 
@@ -1434,7 +1523,7 @@ const exportedEvents =
 
                 <button
                     class="approve"
-                    onclick="confirmAnyway(${p.id})">
+                    onclick="confirmAnyway('${p.firestoreId}')">
 
                     Potvrdit i tak
 
@@ -1442,7 +1531,7 @@ const exportedEvents =
 
                 <button
                     class="reject"
-                    onclick="cancelProposal(${p.id})">
+                    onclick="cancelProposal('${p.firestoreId}')">
 
                     Zrušit návrh
 
@@ -1452,7 +1541,7 @@ const exportedEvents =
 		    ? `
 		        <button
 		            class="cancel-final"
-		            onclick="deleteEvent(${p.id})">
+		            onclick="deleteEvent('${p.firestoreId}')">
 		            Smazat
 		        </button>
 		      `
@@ -1503,7 +1592,7 @@ if (p.status === "approved") {
 			        <button
 			            onclick="
 			                acknowledgeNotification(
-			                    ${p.id},
+			                    '${p.firestoreId}',
 			                    ${index}
 			                )
 			            ">
@@ -1555,7 +1644,7 @@ if (p.status === "approved") {
  			           <br><br>
   			          <button
   			             class="approve"
-   			             onclick="attendAnyway(${p.id})">
+   			             onclick="attendAnyway('${p.firestoreId}')">
 			             Nakonec dorazím
  			          </button>
  			       </div>
@@ -1571,7 +1660,7 @@ if (p.status === "approved") {
 
 		        <button
 		            class="reject"
-		            onclick="deleteEvent(${p.id})">
+		            onclick="deleteEvent('${p.firestoreId}')">
 		            Smazat akci
 		        </button>
 	
@@ -1583,8 +1672,10 @@ if (p.status === "approved") {
 <br>
 
 ${
-    exportedEvents[currentUser] &&
-    exportedEvents[currentUser].includes(p.id)
+exportedEvents[currentUser] &&
+exportedEvents[currentUser].includes(
+    p.firestoreId
+)
         ? `
             <div class="info">
                 ✅ Zřejmě jsi si už přidal do kalendáře.
@@ -1593,7 +1684,7 @@ ${
         : `
             <button
                 class="approve"
-                onclick="downloadCalendarEvent(${p.id})">
+                onclick="downloadCalendarEvent('${p.firestoreId}')">
                 📅 Přidat do kalendáře
             </button>
           `
@@ -1638,7 +1729,7 @@ ${
 		            class="reject"
 		            onclick="
 		                cannotAttendAnyway(
-		                    ${p.id}
+		                    '${p.firestoreId}'
 		                )
 		            ">
 		            Nakonec nedorazím

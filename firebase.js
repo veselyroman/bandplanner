@@ -188,3 +188,57 @@ async function (proposal) {
     );
 
 };
+
+window.firebaseGetProposals =
+async function () {
+
+    const snapshot =
+        await getDocs(
+            collection(db, "proposals")
+        );
+
+    const result = [];
+
+    snapshot.forEach(docItem => {
+
+        result.push({
+            firestoreId: docItem.id,
+            ...docItem.data()
+        });
+
+    });
+
+    return result;
+};
+
+window.firebaseUpdateProposal =
+async function (
+    firestoreId,
+    data
+) {
+
+    await updateDoc(
+        doc(
+            db,
+            "proposals",
+            firestoreId
+        ),
+        data
+    );
+
+};
+
+window.firebaseDeleteProposal =
+async function (
+    firestoreId
+) {
+
+    await deleteDoc(
+        doc(
+            db,
+            "proposals",
+            firestoreId
+        )
+    );
+
+};
