@@ -463,7 +463,7 @@ async function (
 
 const registration =
     await navigator.serviceWorker.register(
-        "/firebase-messaging-sw.js"
+        "./firebase-messaging-sw.js"
     );
 
     const permission =
