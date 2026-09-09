@@ -168,14 +168,17 @@ if (section === "files") {
 
 }
 
-	if (section === "profile") {
-	    document.getElementById(
-	        "profileSection"
-	    ).style.display = "block";
+if (section === "profile") {
 
-	    refreshProfile();
-	}
+    document.getElementById(
+        "profileSection"
+    ).style.display = "block";
 
+    refreshProfile();
+
+    refreshPushStatus();
+
+}
 	if (section === "users") {
 
 	    document.getElementById(
@@ -1965,5 +1968,44 @@ async function refreshFilesNotification() {
         hasNewFiles
             ? "🔴 Soubory"
             : "Soubory";
+
+}
+
+async function refreshPushStatus() {
+
+    const container =
+        document.getElementById(
+            "pushNotificationStatus"
+        );
+
+    const enabled =
+        await firebaseHasDeviceToken(
+            currentUser
+        );
+
+    if (enabled) {
+
+        container.innerHTML =
+            `
+            <div class="info">
+                🔔 Notifikace aktivní
+            </div>
+            `;
+
+        return;
+
+    }
+
+    container.innerHTML =
+        `
+        <button
+            onclick="
+                firebaseRegisterForPush(
+                    currentUser
+                )
+            ">
+            🔔 Povolit notifikace
+        </button>
+        `;
 
 }

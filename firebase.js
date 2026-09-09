@@ -512,3 +512,27 @@ const token =
     );
 
 };
+
+window.firebaseHasDeviceToken =
+async function (username) {
+
+    const q = query(
+        collection(
+            db,
+            "deviceTokens"
+        ),
+        where(
+            "username",
+            "==",
+            username
+        )
+    );
+
+    const snapshot =
+        await getDocs(q);
+
+    return !snapshot.empty;
+
+};
+
+
