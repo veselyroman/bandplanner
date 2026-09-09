@@ -1,65 +1,8 @@
-let users =
-    JSON.parse(
-        localStorage.getItem(
-            "bandplanner_users"
-        )
-    ) || [
-
-        {
-            username: "Roman",
-            password: "1234",
-            role: "admin"
-        },
-
-        {
-            username: "Pepa",
-            password: "1234",
-            role: "member"
-        },
-
-        {
-            username: "Jarda",
-            password: "1234",
-            role: "member"
-        },
-
-        {
-            username: "Karel",
-            password: "1234",
-            role: "member"
-        }
-
-    ];
-
 let currentUser = null;
 
 let currentUserRole = null;
 
 let proposalsFromFirebase = [];
-
-let proposals =
-    JSON.parse(
-        localStorage.getItem(
-            "bandplanner_proposals"
-        )
-    ) || [];
-
-/* ===========================
-   ULOŽENÍ DAT
-=========================== */
-
-function saveData() {
-
-    localStorage.setItem(
-        "bandplanner_proposals",
-        JSON.stringify(proposals)
-    );
-
-    localStorage.setItem(
-        "bandplanner_users",
-        JSON.stringify(users)
-    );
-}
 
 /* ===========================
    KONTROLA PŘIHLÁŠENÍ
@@ -374,13 +317,10 @@ const usersFromFirebase =
 	                u => u !== currentUser
 	            )
 	};
-proposals.push(proposal);
 
 await firebaseAddProposal(
     proposal
 );
-
-saveData();
 
     document.getElementById("eventDate").value = "";
 	document.getElementById("eventStartTime").value = "";
@@ -464,8 +404,6 @@ await firebaseUpdateProposal(
     }
 );
 
-    saveData();
-
     refreshLists();
 }
 
@@ -513,8 +451,6 @@ await firebaseUpdateProposal(
     }
 );
 
-    saveData();
-
     refreshLists();
 }
 
@@ -556,8 +492,6 @@ await firebaseUpdateProposal(
     }
 );
 
-    saveData();
-
     refreshLists();
 }
 
@@ -594,8 +528,6 @@ await firebaseUpdateProposal(
         status: "cancelled"
     }
 );
-
-    saveData();
 
     refreshLists();
 }
@@ -653,7 +585,6 @@ await firebaseUpdateProposal(
     }
 );
 
-    saveData();
     refreshLists();
 
     alert(
@@ -766,7 +697,6 @@ await firebaseUpdateProposal(
     }
 );
 
-    saveData();
     refreshLists();
 
     alert(
@@ -816,7 +746,6 @@ await firebaseUpdateProposal(
     }
 );
 
-    saveData();
     refreshLists();
 }
 
@@ -854,7 +783,6 @@ await firebaseDeleteProposal(
     proposal.firestoreId
 );
 
-    saveData();
     refreshLists();
 
     alert("Akce byla odstraněna.");
@@ -998,6 +926,16 @@ proposalsFromFirebase.forEach(p => {
 
 });
 
+for (const p of proposalsFromFirebase) {
+
+    await firebaseUpdateProposal(
+        p.firestoreId,
+        {
+            pendingUsers: p.pendingUsers
+        }
+    );
+
+}
 	refreshUsers();
 	refreshLists();
 
@@ -1080,8 +1018,6 @@ for (const p of proposalsFromFirebase) {
     );
 
 }
-
-	saveData();
 
     refreshUsers();
 refreshLists();
@@ -1379,6 +1315,12 @@ const exportedEvents =
 proposalsFromFirebase =
     await firebaseGetProposals();
 
+const usersFromFirebase =
+    await firebaseGetUsers();
+
+const usersCount =
+    usersFromFirebase.length;
+
 [...proposalsFromFirebase]
     .sort((a, b) => {
 
@@ -1483,7 +1425,7 @@ proposalsFromFirebase =
 	    p.pendingUsers || [];
 
  const votedCount =
-    users.length -
+    usersCount -
     waiting.length;
 
             othersList.innerHTML += `
@@ -1497,7 +1439,7 @@ proposalsFromFirebase =
 		${p.note}<br><br>
                 <div class="waiting">
 
-                    ${votedCount}/${users.length}
+                    ${votedCount}/${usersCount}
                     vyjádřeno
 
                     <br><br>
@@ -1507,6 +1449,18 @@ proposalsFromFirebase =
                     ${waiting.join(", ") || "nikoho"}
 
                 </div>
+
+${currentUserRole === "admin"
+    ? `
+        <br><br>
+        <button
+            class="reject"
+            onclick="deleteEvent('${p.firestoreId}')">
+            Smazat návrh
+        </button>
+      `
+    : ""
+}
 
             </div>
             `;
