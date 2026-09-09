@@ -1568,33 +1568,33 @@ ${(p.messages || []).map((m, index) => `
     <br>
 `).join("")}
 
+${p.status === "waiting_for_author"
+    ? `
+        <button
+            class="approve"
+            onclick="confirmAnyway('${p.firestoreId}')">
+            Potvrdit i tak
+        </button>
+
+        <button
+            class="reject"
+            onclick="cancelProposal('${p.firestoreId}')">
+            Zrušit návrh
+        </button>
+
+        ${currentUserRole === "admin"
+            ? `
                 <button
-                    class="approve"
-                    onclick="confirmAnyway('${p.firestoreId}')">
-
-                    Potvrdit i tak
-
+                    class="cancel-final"
+                    onclick="deleteEvent('${p.firestoreId}')">
+                    Smazat
                 </button>
-
-                <button
-                    class="reject"
-                    onclick="cancelProposal('${p.firestoreId}')">
-
-                    Zrušit návrh
-
-                </button>
-
-		${currentUserRole === "admin"
-		    ? `
-		        <button
-		            class="cancel-final"
-		            onclick="deleteEvent('${p.firestoreId}')">
-		            Smazat
-		        </button>
-		      `
-		    : ""
-		}
-
+              `
+            : ""
+        }
+      `
+    : ""
+}
             </div>
             `;
         }
