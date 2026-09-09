@@ -1067,6 +1067,20 @@ proposalsFromFirebase.forEach(p => {
     }
 });
 
+for (const p of proposalsFromFirebase) {
+
+    await firebaseUpdateProposal(
+        p.firestoreId,
+        {
+            approved: p.approved,
+            rejected: p.rejected,
+            participants: p.participants,
+            pendingUsers: p.pendingUsers
+        }
+    );
+
+}
+
 	saveData();
 
     refreshUsers();
@@ -1314,7 +1328,8 @@ if (
         if (
             p.status === "waiting_for_author" &&
             p.createdBy === currentUser
-        ) {
+        )
+ {
             authorCount++;
         }
     });
@@ -1501,15 +1516,24 @@ proposalsFromFirebase =
            ROZHODNUTÍ AUTORA
         ====================== */
 
-        if (
-
-            p.status === "waiting_for_author" &&
-
-            p.createdBy === currentUser
-
-        ) {
+if (
+    p.createdBy === currentUser &&
+    (
+        p.status === "waiting_for_author" ||
+        (
+            p.messages &&
+            p.messages.length > 0
+        )
+    )
+)
+         {
 
             authorList.innerHTML += `
+<div class="proposal">
+TEST AUTOR
+<br>
+${p.type}
+<br><br>
             <div class="proposal">
 
                 <b>${p.type}</b><br>
@@ -1576,6 +1600,7 @@ ${(p.messages || []).map((m, index) => `
 		}
 
             </div>
+</div>
             `;
         }
  
