@@ -292,6 +292,7 @@ async function (
             uploadedBy,
             uploadedAt:
                 new Date().toISOString(),
+		size:file.size,
             storagePath,
             downloadUrl
         }
