@@ -127,11 +127,16 @@ window.firebaseAddUser = async function (
     role
 ) {
 
+    const passwordhash =
+        await hashPassword(
+            password
+        );
+
     await addDoc(
         collection(db, "users"),
         {
             username,
-            password,
+            passwordhash,
             role
         }
     );
@@ -200,13 +205,15 @@ async function (
 
     for (const docItem of snapshot.docs) {
 
-        await updateDoc(
-            doc(db, "users", docItem.id),
-            {
+await updateDoc(
+    doc(db, "users", docItem.id),
+    {
+        passwordhash:
+            await hashPassword(
                 password
-            }
-        );
-
+            )
+    }
+);
     }
 };
 
