@@ -102,7 +102,7 @@ function logout() {
    SEKCE
 =========================== */
 
-function showSection(section) {
+async function showSection(section) {
 
     document.getElementById("mineSection").style.display =
         "none";
