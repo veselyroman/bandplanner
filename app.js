@@ -2042,7 +2042,7 @@ async function notifyNewFile(
     fileName
 ) {
 
-await    fetch(
+    fetch(
         "https://us-central1-bandplanner-35c5f.cloudfunctions.net/notifyNewFile" +
         "?fileName=" +
         encodeURIComponent(fileName) +
@@ -2056,7 +2056,7 @@ async function notifyNewProposal(
     type
 ) {
 
-await    fetch(
+    fetch(
         "https://us-central1-bandplanner-35c5f.cloudfunctions.net/notifyNewProposal" +
         "?type=" +
         encodeURIComponent(type) +
@@ -2070,7 +2070,7 @@ async function notifyAttendanceChange(
     message
 ) {
 
-await    fetch(
+    fetch(
         "https://us-central1-bandplanner-35c5f.cloudfunctions.net/notifyAttendanceChange" +
         "?message=" +
         encodeURIComponent(message)
