@@ -22,10 +22,10 @@ messaging.onBackgroundMessage(
     (payload) => {
 
         self.registration.showNotification(
-            payload.notification.title,
+            payload.data.title,
             {
                 body:
-                    payload.notification.body,
+                    payload.data.body,
                 icon:
                     "/image/icon-192.png"
             }
