@@ -822,13 +822,33 @@ const storageInfo =
 
 if (currentUserRole === "admin") {
 
-    storageInfo.innerHTML =
-        `
-        <div class="info">
-            Storage:
-            zjišťujeme...
-        </div>
-        `;
+const files =
+    await firebaseGetFiles();
+
+const totalBytes =
+    files.reduce(
+        (sum, file) =>
+            sum + (file.size || 0),
+        0
+    );
+
+const totalMB =
+    (
+        totalBytes /
+        1024 /
+        1024
+    ).toFixed(2);
+
+storageInfo.innerHTML =
+    `
+    <div class="info">
+        Storage:
+        ${totalMB} MB
+        <br>
+        Počet souborů:
+        ${files.length}
+    </div>
+    `;
 
 } else {
 
