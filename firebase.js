@@ -20,6 +20,12 @@ import {
     deleteObject
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
 
+import {
+    getMessaging,
+    getToken,
+    onMessage
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-messaging.js";
+
 const firebaseConfig = {
     apiKey: "AIzaSyAvlN5TvJWyqZMQ6IpcgCNUCx0A0KsR6j4",
     authDomain: "bandplanner-35c5f.firebaseapp.com",
@@ -30,9 +36,10 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-
+export const messaging = getMessaging(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
 export {
     collection,
     addDoc
@@ -406,5 +413,102 @@ async function (username) {
     }
 
     return snapshot.docs[0].data();
+
+};
+
+window.firebaseSaveDeviceToken =
+async function (
+    username,
+    token
+) {
+
+    const q = query(
+        collection(
+            db,
+            "deviceTokens"
+        ),
+        where(
+            "token",
+            "==",
+            token
+        )
+    );
+
+    const snapshot =
+        await getDocs(q);
+
+    if (!snapshot.empty) {
+        return;
+    }
+
+    await addDoc(
+        collection(
+            db,
+            "deviceTokens"
+        ),
+        {
+            username,
+            token,
+            createdAt:
+                new Date().toISOString()
+        }
+    );
+
+};
+
+window.firebaseRegisterForPush =
+async function (
+    username
+) {
+
+const registration =
+    await navigator.serviceWorker.register(
+        "/firebase-messaging-sw.js"
+    );
+
+    const permission =
+        await Notification.requestPermission();
+
+    if (
+        permission !== "granted"
+    ) {
+
+        alert(
+            "Notifikace nebyly povoleny."
+        );
+
+        return;
+
+    }
+
+const token =
+    await getToken(
+        messaging,
+        {
+            vapidKey:
+                "BONAuoS3Jyw1IkHojEPr_ofaY8D56TmPS1QjBXnlZ_tYtVUxj4ZyVws3_hqsHSitErg3zBMV7Fu9Dq3fufsy3kU",
+            serviceWorkerRegistration:
+                registration
+        }
+    );
+
+    if (!token) {
+
+        alert(
+            "Token se nepodařilo získat."
+        );
+
+        return;
+
+    }
+
+    await firebaseSaveDeviceToken(
+        username,
+        token
+    );
+
+    alert(
+        "Push notifikace aktivovány."
+    );
 
 };
