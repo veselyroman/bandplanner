@@ -72,6 +72,7 @@ const user =
     showSection("mine");
 
     refreshLists();
+	await refreshFilesNotification();
 }
 
 /* ===========================
@@ -158,6 +159,12 @@ if (section === "files") {
         "block";
 
     refreshFiles();
+
+	await firebaseSaveFilesVisit(
+	currentUser
+	);
+
+refreshFilesNotification();
 
 }
 
@@ -1823,9 +1830,99 @@ async function refreshFiles() {
     target="_blank">
     Stáhnout
 </a>
+${
+    currentUserRole === "admin" ||
+    file.uploadedBy === currentUser
+        ? `
+            <br><br>
+            <button
+                class="reject"
+                onclick="
+                    deleteFile(
+                        '${file.firestoreId}',
+                        '${file.storagePath}'
+                    )
+                ">
+                Smazat
+            </button>
+          `
+        : ""
+}
+
                 </div>
             `;
 
         });
+
+}
+
+async function deleteFile(
+    firestoreId,
+    storagePath
+) {
+
+    const confirmed =
+        confirm(
+            "Opravdu chceš soubor odstranit?"
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    await firebaseDeleteFile(
+        firestoreId,
+        storagePath
+    );
+
+    refreshFiles();
+
+}
+
+async function refreshFilesNotification() {
+
+    const files =
+        await firebaseGetFiles();
+
+    const visitInfo =
+        await firebaseGetFilesVisit(
+            currentUser
+        );
+
+    let hasNewFiles = false;
+
+    files.forEach(file => {
+
+        if (
+            file.uploadedBy === currentUser
+        ) {
+            return;
+        }
+
+        if (!visitInfo) {
+
+            hasNewFiles = true;
+
+            return;
+
+        }
+
+        if (
+            file.uploadedAt >
+            visitInfo.lastVisitedFiles
+        ) {
+
+            hasNewFiles = true;
+
+        }
+
+    });
+
+    document.getElementById(
+        "filesTab"
+    ).innerText =
+        hasNewFiles
+            ? "🔴 Soubory"
+            : "Soubory";
 
 }

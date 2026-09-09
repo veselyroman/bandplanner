@@ -326,4 +326,84 @@ async function () {
 
 };
 
+window.firebaseDeleteFile =
+async function (
+    firestoreId,
+    storagePath
+) {
 
+    await deleteObject(
+        ref(
+            storage,
+            storagePath
+        )
+    );
+
+    await deleteDoc(
+        doc(
+            db,
+            "files",
+            firestoreId
+        )
+    );
+
+};
+
+window.firebaseSaveFilesVisit =
+async function (username) {
+
+    const q = query(
+        collection(db, "fileViews"),
+        where("username", "==", username)
+    );
+
+    const snapshot =
+        await getDocs(q);
+
+    if (snapshot.empty) {
+
+        await addDoc(
+            collection(db, "fileViews"),
+            {
+                username,
+                lastVisitedFiles:
+                    new Date().toISOString()
+            }
+        );
+
+        return;
+
+    }
+
+    await updateDoc(
+        doc(
+            db,
+            "fileViews",
+            snapshot.docs[0].id
+        ),
+        {
+            lastVisitedFiles:
+                new Date().toISOString()
+        }
+    );
+
+};
+
+window.firebaseGetFilesVisit =
+async function (username) {
+
+    const q = query(
+        collection(db, "fileViews"),
+        where("username", "==", username)
+    );
+
+    const snapshot =
+        await getDocs(q);
+
+    if (snapshot.empty) {
+        return null;
+    }
+
+    return snapshot.docs[0].data();
+
+};
