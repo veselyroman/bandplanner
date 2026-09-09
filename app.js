@@ -1529,11 +1529,7 @@ if (
          {
 
             authorList.innerHTML += `
-<div class="proposal">
-TEST AUTOR
-<br>
-${p.type}
-<br><br>
+
             <div class="proposal">
 
                 <b>${p.type}</b><br>
@@ -1600,7 +1596,6 @@ ${(p.messages || []).map((m, index) => `
 		}
 
             </div>
-</div>
             `;
         }
  
