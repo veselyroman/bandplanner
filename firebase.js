@@ -57,8 +57,11 @@ window.firebaseLogin = async function (
 
     const q = query(
         collection(db, "users"),
-        where("username", "==", username),
-        where("password", "==", password)
+        where(
+            "username",
+            "==",
+            username
+        )
     );
 
     const snapshot =
@@ -68,9 +71,35 @@ window.firebaseLogin = async function (
         return null;
     }
 
-    return snapshot.docs[0].data();
-};
+    const user =
+        snapshot.docs[0].data();
 
+    const enteredHash =
+        await hashPassword(
+            password
+        );
+
+    if (
+        user.passwordhash &&
+        user.passwordhash === enteredHash
+    ) {
+
+        return user;
+
+    }
+
+    if (
+        user.password &&
+        user.password === password
+    ) {
+
+        return user;
+
+    }
+
+    return null;
+
+};
 window.firebaseGetUsers = async function () {
 
     const snapshot =
@@ -534,5 +563,40 @@ async function (username) {
     return !snapshot.empty;
 
 };
+
+async function hashPassword(
+    password
+) {
+
+    const encoder =
+        new TextEncoder();
+
+    const data =
+        encoder.encode(
+            password
+        );
+
+    const hashBuffer =
+        await crypto.subtle.digest(
+            "SHA-256",
+            data
+        );
+
+    const hashArray =
+        Array.from(
+            new Uint8Array(
+                hashBuffer
+            )
+        );
+
+    return hashArray
+        .map(b =>
+            b.toString(16)
+             .padStart(2, "0")
+        )
+        .join("");
+
+}
+
 
 

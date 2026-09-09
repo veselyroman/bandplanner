@@ -284,21 +284,16 @@ h3{
 @media(max-width:768px){
 
     header{
-
         flex-direction:column;
-
         align-items:flex-start;
     }
 
     .tabs button{
-
         width:100%;
-
         margin-bottom:5px;
     }
 
     button{
-
         width:100%;
     }
 
@@ -306,7 +301,15 @@ h3{
     .reject,
     .confirm-final,
     .cancel-final{
-
         margin-bottom:8px;
     }
+
+    #newSection,
+    #profileSection,
+    #usersSection {
+
+        padding-bottom: 80px;
+
+    }
+
 }
