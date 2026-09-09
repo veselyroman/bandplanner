@@ -158,13 +158,13 @@ if (section === "files") {
     ).style.display =
         "block";
 
-    refreshFiles();
+	await refreshFiles();
 
 	await firebaseSaveFilesVisit(
 	currentUser
 	);
 
-refreshFilesNotification();
+	await refreshFilesNotification();
 
 }
 
@@ -814,6 +814,27 @@ await firebaseDeleteProposal(
 =========================== */
 
 async function refreshUsers() {
+
+const storageInfo =
+    document.getElementById(
+        "storageInfo"
+    );
+
+if (currentUserRole === "admin") {
+
+    storageInfo.innerHTML =
+        `
+        <div class="info">
+            Storage:
+            zjišťujeme...
+        </div>
+        `;
+
+} else {
+
+    storageInfo.innerHTML = "";
+
+}
 
 const list =
     document.getElementById(
