@@ -1286,6 +1286,14 @@ function refreshTabNotifications() {
             p.approved.includes(currentUser) ||
             p.rejected.includes(currentUser);
 
+if (
+    p.createdBy === currentUser &&
+    p.messages &&
+    p.messages.length > 0
+) {
+    authorCount++;
+}
+
         if (
             (
                 p.status === "pending" ||
@@ -1310,6 +1318,7 @@ function refreshTabNotifications() {
             authorCount++;
         }
     });
+
 
     document.getElementById(
         "mineTab"
@@ -1521,6 +1530,24 @@ proposalsFromFirebase =
 
                 <br><br>
 
+${(p.messages || []).map((m, index) => `
+    <div class="info">
+        🔔 ${m.text}
+        <br><br>
+        <button
+            class="approve"
+            onclick="
+                acknowledgeNotification(
+                    '${p.firestoreId}',
+                    ${index}
+                )
+            ">
+            Potvrzuji, že jsem četl
+        </button>
+    </div>
+    <br>
+`).join("")}
+
                 <button
                     class="approve"
                     onclick="confirmAnyway('${p.firestoreId}')">
@@ -1570,43 +1597,6 @@ if (p.status === "approved") {
         return;
     }
 
-	let messagesHtml = "";
-
-		if (
-	    p.createdBy === currentUser &&
-	    p.messages &&
-	    p.messages.length
-	) {
-
-		messagesHtml =
-		    "<br><div class='info'><b>Nové informace:</b><br><br>";
-
-			p.messages.forEach((m, index) => {
-
-			    messagesHtml += `
-
-			        ${m.text}
-
-			        <br>
-
-			        <button
-			            onclick="
-			                acknowledgeNotification(
-			                    '${p.firestoreId}',
-			                    ${index}
-			                )
-			            ">
-			            Potvrzuji, že jsem četl
-			        </button>
-
-			        <br><br>
-
-			    `;
-
-			});
-
-			messagesHtml += "</div>";	}
-
             const color =
                 p.type === "Koncert"
                     ? "#2e7d32"
@@ -1651,8 +1641,6 @@ if (p.status === "approved") {
 			      `
 			    : ""
 		}
-
-		${messagesHtml}
 
 		${currentUserRole === "admin"
 		    ? `
