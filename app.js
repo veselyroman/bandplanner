@@ -151,9 +151,14 @@ document.getElementById("filesSection").style.display =
     }
 
 if (section === "files") {
+
     document.getElementById(
         "filesSection"
-    ).style.display = "block";
+    ).style.display =
+        "block";
+
+    refreshFiles();
+
 }
 
 	if (section === "profile") {
@@ -1719,12 +1724,108 @@ exportedEvents[currentUser].includes(
 
 async function uploadFile() {
 
-    alert(
-        "Nahrávání zatím není připojeno k Firebase Storage."
+    const file =
+        document.getElementById(
+            "fileUpload"
+        ).files[0];
+
+    const description =
+        document.getElementById(
+            "fileDescription"
+        ).value.trim();
+
+    if (!file) {
+
+        alert(
+            "Vyber soubor."
+        );
+
+        return;
+
+    }
+
+    const maxSize =
+        20 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+
+        alert(
+            "Maximální velikost souboru je 20 MB."
+        );
+
+        return;
+
+    }
+
+    await firebaseUploadFile(
+        file,
+        description,
+        currentUser
     );
+
+    document.getElementById(
+        "fileUpload"
+    ).value = "";
+
+    document.getElementById(
+        "fileDescription"
+    ).value = "";
+
+    alert(
+        "Soubor byl nahrán."
+    );
+
+    refreshFiles();
 
 }
 
 async function refreshFiles() {
+
+    const filesList =
+        document.getElementById(
+            "filesList"
+        );
+
+    filesList.innerHTML = "";
+
+    const files =
+        await firebaseGetFiles();
+
+    files
+        .sort((a, b) =>
+            b.uploadedAt.localeCompare(
+                a.uploadedAt
+            )
+        )
+        .forEach(file => {
+
+            filesList.innerHTML += `
+                <div class="proposal">
+
+                    <b>
+                        ${file.filename}
+                    </b>
+
+                    <br>
+
+                    Autor:
+                    ${file.uploadedBy}
+
+                    <br>
+
+                    Popis:
+                    ${file.description || "-"}
+
+                    <br><br>
+
+<a
+    href="${file.downloadUrl}"
+    target="_blank">
+    Stáhnout
+</a>
+                </div>
+            `;
+
+        });
 
 }

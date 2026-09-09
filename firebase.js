@@ -12,6 +12,14 @@ import {
     updateDoc
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
+import {
+    getStorage,
+    ref,
+    uploadBytes,
+    getDownloadURL,
+    deleteObject
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
+
 const firebaseConfig = {
     apiKey: "AIzaSyAvlN5TvJWyqZMQ6IpcgCNUCx0A0KsR6j4",
     authDomain: "bandplanner-35c5f.firebaseapp.com",
@@ -24,6 +32,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 export {
     collection,
     addDoc
@@ -242,3 +251,79 @@ async function (
     );
 
 };
+
+window.firebaseUploadFile =
+async function (
+    file,
+    description,
+    uploadedBy
+) {
+
+    const storagePath =
+        "files/" +
+        Date.now() +
+        "_" +
+        file.name;
+
+    const storageRef =
+        ref(
+            storage,
+            storagePath
+        );
+
+    await uploadBytes(
+        storageRef,
+        file
+    );
+
+    const downloadUrl =
+        await getDownloadURL(
+            storageRef
+        );
+
+    await addDoc(
+        collection(
+            db,
+            "files"
+        ),
+        {
+            filename: file.name,
+            description,
+            uploadedBy,
+            uploadedAt:
+                new Date().toISOString(),
+            storagePath,
+            downloadUrl
+        }
+    );
+
+};
+
+window.firebaseGetFiles =
+async function () {
+
+    const snapshot =
+        await getDocs(
+            collection(
+                db,
+                "files"
+            )
+        );
+
+    const result = [];
+
+    snapshot.forEach(docItem => {
+
+        result.push({
+            firestoreId:
+                docItem.id,
+            ...docItem.data()
+        });
+
+    });
+
+    return result;
+
+};
+
+
