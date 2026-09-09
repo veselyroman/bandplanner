@@ -115,6 +115,9 @@ function showSection(section) {
     document.getElementById("calendarSection").style.display =
 	"none";
 
+document.getElementById("filesSection").style.display =
+    "none";
+
 	document.getElementById("usersSection")
 	    .style.display = "none";
 
@@ -146,6 +149,12 @@ function showSection(section) {
 	    document.getElementById("calendarSection").style.display =
             "block";
     }
+
+if (section === "files") {
+    document.getElementById(
+        "filesSection"
+    ).style.display = "block";
+}
 
 	if (section === "profile") {
 	    document.getElementById(
@@ -1706,4 +1715,16 @@ exportedEvents[currentUser].includes(
 
     });
 	refreshTabNotifications();
+}
+
+async function uploadFile() {
+
+    alert(
+        "Nahrávání zatím není připojeno k Firebase Storage."
+    );
+
+}
+
+async function refreshFiles() {
+
 }

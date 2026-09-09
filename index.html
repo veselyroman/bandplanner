@@ -66,6 +66,12 @@
 		    Kalendář
 	    </button>
 
+<button
+    id="filesTab"
+    onclick="showSection('files')">
+    Soubory
+</button>
+
 	<button
 	    id="mineTab"
 	    onclick="showSection('mine')">
@@ -143,6 +149,28 @@
 
 	    <div id="calendarList"></div>
 	</div>
+
+<!-- SOUBORY -->
+<div id="filesSection" style="display:none;">
+    <h3>Sdílené soubory</h3>
+
+    <input
+        type="file"
+        id="fileUpload">
+
+    <input
+        id="fileDescription"
+        placeholder="Popis souboru">
+
+    <button onclick="uploadFile()">
+        Nahrát soubor
+    </button>
+
+    <br><br>
+
+    <div id="filesList"></div>
+</div>
+
 
 <!-- PROFIL -->
 <div id="profileSection" style="display:none;">
