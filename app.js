@@ -346,6 +346,10 @@ await firebaseAddProposal(
     proposal
 );
 
+await notifyNewProposal(
+    type
+);
+
     document.getElementById("eventDate").value = "";
 	document.getElementById("eventStartTime").value = "";
 	document.getElementById("eventEndTime").value = "";
@@ -611,6 +615,11 @@ await firebaseUpdateProposal(
 
     refreshLists();
 
+await notifyAttendanceChange(
+    currentUser +
+    " nakonec dorazí."
+);
+
     alert(
         "Autor akce byl informován, že nakonec dorazíš."
     );
@@ -722,6 +731,11 @@ await firebaseUpdateProposal(
 );
 
     refreshLists();
+
+await notifyAttendanceChange(
+    currentUser +
+    " nakonec nedorazí."
+);
 
     alert(
         "Autor akce byl informován."
@@ -1814,6 +1828,10 @@ async function uploadFile() {
         currentUser
     );
 
+await notifyNewFile(
+    file.name
+);
+
     document.getElementById(
         "fileUpload"
     ).value = "";
@@ -1983,19 +2001,29 @@ async function refreshPushStatus() {
             currentUser
         );
 
-    if (enabled) {
+if (enabled) {
 
-        container.innerHTML =
-            `
-            <div class="info">
-                🔔 Notifikace aktivní
-            </div>
-            `;
+    container.innerHTML =
+        `
+        <div class="info">
+            🔔 Notifikace aktivní
+        </div>
 
-        return;
+        <br>
 
-    }
+        <button
+            onclick="
+                firebaseRegisterForPush(
+                    currentUser
+                )
+            ">
+            Obnovit notifikaci
+        </button>
+        `;
 
+    return;
+
+}
     container.innerHTML =
         `
         <button
@@ -2007,5 +2035,45 @@ async function refreshPushStatus() {
             🔔 Povolit notifikace
         </button>
         `;
+
+}
+
+async function notifyNewFile(
+    fileName
+) {
+
+await    fetch(
+        "https://us-central1-bandplanner-35c5f.cloudfunctions.net/notifyNewFile" +
+        "?fileName=" +
+        encodeURIComponent(fileName) +
+        "&uploadedBy=" +
+        encodeURIComponent(currentUser)
+    );
+
+}
+
+async function notifyNewProposal(
+    type
+) {
+
+await    fetch(
+        "https://us-central1-bandplanner-35c5f.cloudfunctions.net/notifyNewProposal" +
+        "?type=" +
+        encodeURIComponent(type) +
+        "&createdBy=" +
+        encodeURIComponent(currentUser)
+    );
+
+}
+
+async function notifyAttendanceChange(
+    message
+) {
+
+await    fetch(
+        "https://us-central1-bandplanner-35c5f.cloudfunctions.net/notifyAttendanceChange" +
+        "?message=" +
+        encodeURIComponent(message)
+    );
 
 }
