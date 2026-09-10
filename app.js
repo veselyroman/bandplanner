@@ -71,8 +71,9 @@ const user =
 
     showSection("mine");
 
-    refreshLists();
+	await refreshLists();
 	await refreshFilesNotification();
+await refreshCalendarNotification();
 }
 
 /* ===========================
@@ -145,11 +146,21 @@ document.getElementById("filesSection").style.display =
             "block";
     }
 
-    if (section === "calendar") {
+if (section === "calendar") {
 
-	    document.getElementById("calendarSection").style.display =
-            "block";
-    }
+    document.getElementById(
+        "calendarSection"
+    ).style.display =
+        "block";
+
+    await refreshLists();
+
+    await firebaseSaveCalendarVisit(
+        currentUser
+    );
+
+    await refreshCalendarNotification();
+}
 
 if (section === "files") {
 
@@ -376,10 +387,12 @@ function processVoting(proposal) {
 
 	    if (proposal.rejected.length === 0) {
 
-	        proposal.status = "approved";
+proposal.status = "approved";
+proposal.participants =
+    [...proposal.approved];
 
-	        proposal.participants =
-	            [...proposal.approved];
+proposal.approvedAt =
+    new Date().toISOString();
 
 	        return;
 	    }
@@ -428,7 +441,8 @@ await firebaseUpdateProposal(
         approved: proposal.approved,
         pendingUsers: proposal.pendingUsers,
         status: proposal.status,
-        participants: proposal.participants
+        participants: proposal.participants,
+        approvedAt: proposal.approvedAt
     }
 );
 
@@ -511,12 +525,15 @@ const proposal =
 
     proposal.participants =
         [...proposal.approved];
+proposal.approvedAt =
+    new Date().toISOString();
 
 await firebaseUpdateProposal(
     proposal.firestoreId,
     {
         status: proposal.status,
-        participants: proposal.participants
+        participants: proposal.participants,
+	approvedAt: proposal.approvedAt
     }
 );
 
@@ -1785,6 +1802,7 @@ exportedEvents[currentUser].includes(
 
     });
 	refreshTabNotifications();
+	await refreshCalendarNotification();
 }
 
 async function uploadFile() {
@@ -1989,6 +2007,51 @@ async function refreshFilesNotification() {
 
 }
 
+async function refreshCalendarNotification() {
+
+    const visitInfo =
+        await firebaseGetCalendarVisit(
+            currentUser
+        );
+
+    const proposals =
+        await firebaseGetProposals();
+
+    let hasNewCalendarEvent = false;
+
+    proposals.forEach(p => {
+
+        if (p.status !== "approved") {
+            return;
+        }
+
+        if (!visitInfo) {
+
+            hasNewCalendarEvent = true;
+            return;
+        }
+
+const createdTime =
+    p.approvedAt ||
+    "2000-01-01";
+
+        if (
+            createdTime >
+            visitInfo.lastVisitedCalendar
+        ) {
+            hasNewCalendarEvent = true;
+        }
+
+    });
+
+    document.getElementById(
+        "calendarTab"
+    ).innerText =
+        hasNewCalendarEvent
+            ? "🔴 Kalendář"
+            : "Kalendář";
+}
+
 async function refreshPushStatus() {
 
     const container =
@@ -2077,3 +2140,4 @@ async function notifyAttendanceChange(
     );
 
 }
+

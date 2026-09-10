@@ -452,6 +452,62 @@ async function (username) {
 
 };
 
+window.firebaseSaveCalendarVisit =
+async function (username) {
+
+    const q = query(
+        collection(db, "calendarViews"),
+        where("username", "==", username)
+    );
+
+    const snapshot =
+        await getDocs(q);
+
+    if (snapshot.empty) {
+
+        await addDoc(
+            collection(db, "calendarViews"),
+            {
+                username,
+                lastVisitedCalendar:
+                    new Date().toISOString()
+            }
+        );
+
+        return;
+    }
+
+    await updateDoc(
+        doc(
+            db,
+            "calendarViews",
+            snapshot.docs[0].id
+        ),
+        {
+            lastVisitedCalendar:
+                new Date().toISOString()
+        }
+    );
+};
+
+window.firebaseGetCalendarVisit =
+async function (username) {
+
+    const q = query(
+        collection(db, "calendarViews"),
+        where("username", "==", username)
+    );
+
+    const snapshot =
+        await getDocs(q);
+
+    if (snapshot.empty) {
+        return null;
+    }
+
+    return snapshot.docs[0].data();
+};
+
 window.firebaseSaveDeviceToken =
 async function (
     username,
