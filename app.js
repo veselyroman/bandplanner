@@ -1422,6 +1422,32 @@ END:VCALENDAR`;
 
     document.body.removeChild(a);
 
+let exportedProposals =
+    JSON.parse(
+        localStorage.getItem(
+            "bandplanner_proposal_calendar_exports"
+        )
+    ) || {};
+
+if (!exportedProposals[currentUser]) {
+    exportedProposals[currentUser] = [];
+}
+
+if (
+    !exportedProposals[currentUser]
+        .includes(id)
+) {
+    exportedProposals[currentUser]
+        .push(id);
+}
+
+localStorage.setItem(
+    "bandplanner_proposal_calendar_exports",
+    JSON.stringify(exportedProposals)
+);
+
+refreshLists();
+
     URL.revokeObjectURL(url);
 }
 
@@ -1501,6 +1527,13 @@ const exportedEvents =
     JSON.parse(
         localStorage.getItem(
             "bandplanner_calendar_exports"
+        )
+    ) || {};
+
+const exportedProposals =
+    JSON.parse(
+        localStorage.getItem(
+            "bandplanner_proposal_calendar_exports"
         )
     ) || {};
 
@@ -1676,15 +1709,28 @@ const usersCount =
 
 <br><br>
 
-<button
-    class="approve"
-    onclick="
-        downloadProposalToCalendar(
-            '${p.firestoreId}'
-        )
-    ">
-    📅 Přidat návrh do kalendáře
-</button>
+${
+exportedProposals[currentUser] &&
+exportedProposals[currentUser].includes(
+    p.firestoreId
+)
+    ? `
+        <div class="info">
+            ✅ Zřejmě jsi si už přidal návrh do kalendáře.
+        </div>
+      `
+    : `
+        <button
+            class="approve"
+            onclick="
+                downloadProposalToCalendar(
+                    '${p.firestoreId}'
+                )
+            ">
+            📅 Přidat návrh do kalendáře
+        </button>
+      `
+}
 
 ${currentUserRole === "admin"
     ? `
