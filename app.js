@@ -4,6 +4,30 @@ let currentUserRole = null;
 
 let proposalsFromFirebase = [];
 
+function formatDateWithDay(dateString) {
+    const date = new Date(dateString);
+
+    const days = [
+        "Neděle",
+        "Pondělí",
+        "Úterý",
+        "Středa",
+        "Čtvrtek",
+        "Pátek",
+        "Sobota"
+    ];
+
+    const dayName =
+        days[date.getDay()];
+
+    const formattedDate =
+        date.toLocaleDateString(
+            "cs-CZ"
+        );
+
+    return `${dayName} ${formattedDate}`;
+}
+
 /* ===========================
    KONTROLA PŘIHLÁŠENÍ
 =========================== */
@@ -1337,6 +1361,70 @@ refreshLists();
 
 }
 
+function downloadProposalToCalendar(id) {
+
+    const proposal =
+        proposalsFromFirebase.find(
+            p => p.firestoreId === id
+        );
+
+    if (!proposal) {
+        return;
+    }
+
+    const start =
+        proposal.date.replaceAll("-", "")
+        + "T"
+        + proposal.startTime.replace(":", "")
+        + "00";
+
+    const end =
+        proposal.date.replaceAll("-", "")
+        + "T"
+        + proposal.endTime.replace(":", "")
+        + "00";
+
+    const content =
+`BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+SUMMARY:NÁVRH - ${proposal.type}
+DTSTART:${start}
+DTEND:${end}
+LOCATION:${proposal.location}
+DESCRIPTION:Toto je zatím pouze návrh termínu. ${proposal.note || ""}
+END:VEVENT
+END:VCALENDAR`;
+
+    const blob =
+        new Blob(
+            [content],
+            {
+                type:
+                    "text/calendar"
+            }
+        );
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const a =
+        document.createElement("a");
+
+    a.href = url;
+
+    a.download =
+        `NAVRH-${proposal.type}-${proposal.date}.ics`;
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+}
+
 function refreshTabNotifications() {
 
     let mineCount = 0;
@@ -1427,6 +1515,30 @@ const exportedEvents =
 proposalsFromFirebase =
     await firebaseGetProposals();
 
+const now = new Date();
+
+for (const p of proposalsFromFirebase) {
+
+    const endTime =
+        p.endTime || "23:59";
+
+    const eventEnd =
+        new Date(
+            `${p.date}T${endTime}`
+        );
+
+    if (eventEnd < now) {
+
+        await firebaseDeleteProposal(
+            p.firestoreId
+        );
+
+    }
+}
+
+proposalsFromFirebase =
+    await firebaseGetProposals();
+
 const usersFromFirebase =
     await firebaseGetUsers();
 
@@ -1497,7 +1609,7 @@ const usersCount =
 
                 <b>${p.type}</b><br>
 
-		${p.date}<br>
+		${formatDateWithDay(p.date)}<br>
 		${p.startTime} - ${p.endTime}<br>
                 ${p.location}<br>
 		${p.note}<br><br>
@@ -1545,7 +1657,7 @@ const usersCount =
 
                 <b>${p.type}</b><br>
 
-		${p.date}<br>
+		${formatDateWithDay(p.date)}<br>
 		${p.startTime} - ${p.endTime}<br>
                 ${p.location}<br>
 		${p.note}<br><br>
@@ -1561,6 +1673,18 @@ const usersCount =
                     ${waiting.join(", ") || "nikoho"}
 
                 </div>
+
+<br><br>
+
+<button
+    class="approve"
+    onclick="
+        downloadProposalToCalendar(
+            '${p.firestoreId}'
+        )
+    ">
+    📅 Přidat návrh do kalendáře
+</button>
 
 ${currentUserRole === "admin"
     ? `
@@ -1600,7 +1724,7 @@ if (
 
                 <b>${p.type}</b><br>
 
-		${p.date}<br>
+		${formatDateWithDay(p.date)}<br>
 		${p.startTime} - ${p.endTime}<br>
                 ${p.location}<br><br>
 
@@ -1703,7 +1827,7 @@ if (p.status === "approved") {
 			    font-size:18px;
 			    font-weight:bold;
 		    ">
-			    ${p.date}
+			    ${formatDateWithDay(p.date)}
 		    </span>
 		    <br>
 
