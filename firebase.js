@@ -9,7 +9,8 @@ import {
     where,
     doc,
     deleteDoc,
-    updateDoc
+    updateDoc,
+    onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 import {
@@ -555,8 +556,10 @@ async function (
 
 const registration =
     await navigator.serviceWorker.register(
-        "./firebase-messaging-sw.js"
+        "./service-worker.js"
     );
+
+await navigator.serviceWorker.ready;
 
     const permission =
         await Notification.requestPermission();
@@ -661,5 +664,37 @@ async function hashPassword(
 
 }
 
+let proposalsUnsubscribe = null;
 
+window.firebaseListenToProposals =
+function (callback) {
+    if (proposalsUnsubscribe) {
+        proposalsUnsubscribe();
+    }
+
+    proposalsUnsubscribe =
+        onSnapshot(
+            collection(db, "proposals"),
+            snapshot => {
+                const result = [];
+
+                snapshot.forEach(docItem => {
+                    result.push({
+                        firestoreId: docItem.id,
+                        ...docItem.data()
+                    });
+                });
+
+                callback(result);
+            },
+            error => {
+                console.error(
+                    "Chyba živého načítání návrhů:",
+                    error
+                );
+            }
+        );
+
+    return proposalsUnsubscribe;
+};
 

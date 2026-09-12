@@ -4,6 +4,10 @@ let currentUserRole = null;
 
 let proposalsFromFirebase = [];
 
+let proposalsListenerStarted = false;
+let proposalsRefreshRunning = false;
+let proposalsRefreshPending = false;
+
 function formatDateWithDay(dateString) {
     const date = new Date(dateString);
 
@@ -44,60 +48,124 @@ function requireLogin() {
     return true;
 }
 
+function startProposalsListener() {
+    if (proposalsListenerStarted) {
+        return;
+    }
+
+    proposalsListenerStarted = true;
+
+    firebaseListenToProposals(
+        async () => {
+            if (!currentUser) {
+                return;
+            }
+
+            if (proposalsRefreshRunning) {
+                proposalsRefreshPending = true;
+                return;
+            }
+
+            do {
+                proposalsRefreshPending = false;
+                proposalsRefreshRunning = true;
+
+                try {
+                    await refreshLists();
+                } catch (error) {
+                    console.error(
+                        "Chyba při automatickém obnovení návrhů:",
+                        error
+                    );
+                } finally {
+                    proposalsRefreshRunning = false;
+                }
+            } while (proposalsRefreshPending);
+        }
+    );
+}
+
 /* ===========================
    LOGIN
 =========================== */
 
 async function login() {
-
     const username =
-        document.getElementById("username").value.trim();
+        document.getElementById(
+            "username"
+        ).value.trim();
 
     const password =
-        document.getElementById("password").value;
+        document.getElementById(
+            "password"
+        ).value;
 
-const user =
-    await firebaseLogin(
-        username,
-        password
-    );
-
-    if (!user) {
-
-        alert("Neplatné přihlášení");
-
+    if (!username || !password) {
+        alert(
+            "Vyplň uživatelské jméno a heslo."
+        );
         return;
     }
 
-    currentUser = user.username;
+    try {
+        const user =
+            await firebaseLogin(
+                username,
+                password
+            );
 
-    currentUserRole = user.role;
+        if (!user) {
+            alert(
+                "Uživatelské jméno nebo heslo není správné."
+            );
+            return;
+        }
 
-    document.getElementById("loginScreen").style.display =
-        "none";
+        currentUser = user.username;
+        currentUserRole = user.role;
 
-    document.getElementById("appScreen").style.display =
-        "block";
+        document.getElementById(
+            "loginScreen"
+        ).style.display = "none";
 
-    document.getElementById("currentUser").innerText =
-        currentUser;
+        document.getElementById(
+            "appScreen"
+        ).style.display = "block";
 
-    document.getElementById("currentRole").innerText =
-	    currentUserRole;
+        document.getElementById(
+            "currentUser"
+        ).innerText = currentUser;
 
-	if (currentUserRole === "admin") {
+        document.getElementById(
+            "currentRole"
+        ).innerText = currentUserRole;
 
-	    document.getElementById(
-	        "usersTab"
-	    ).style.display = "inline-block";
+        if (currentUserRole === "admin") {
+            document.getElementById(
+                "usersTab"
+            ).style.display =
+                "inline-block";
+        }
 
-	}
+        showSection("mine");
 
-    showSection("mine");
+        await refreshLists();
+        await refreshFilesNotification();
+        await refreshCalendarNotification();
 
-	await refreshLists();
-	await refreshFilesNotification();
-await refreshCalendarNotification();
+        startProposalsListener();
+    } catch (error) {
+        console.error(
+            "Chyba přihlášení:",
+            error
+        );
+
+        alert(
+            "Přihlášení se nepodařilo kvůli " +
+            "technické nebo síťové chybě. " +
+            "Zkus aplikaci znovu načíst."
+        );
+    }
 }
 
 /* ===========================
@@ -429,58 +497,88 @@ proposal.approvedAt =
 =========================== */
 
 async function approve(id) {
-
     if (!requireLogin()) return;
 
-const proposal =
-    proposalsFromFirebase.find(
-        p =>
-            p.firestoreId === id
-    );
+    try {
+        const proposal =
+            proposalsFromFirebase.find(
+                p => p.firestoreId === id
+            );
 
-    if (!proposal) return;
+        if (!proposal) {
+            alert(
+                "Návrh nebyl nalezen. " +
+                "Seznam bude obnoven."
+            );
+            await refreshLists();
+            return;
+        }
 
-    if (
-        proposal.approved.includes(currentUser) ||
-        proposal.rejected.includes(currentUser)
-    ) {
-        return;
+        proposal.approved =
+            proposal.approved || [];
+
+        proposal.rejected =
+            proposal.rejected || [];
+
+        proposal.pendingUsers =
+            proposal.pendingUsers || [];
+
+        if (
+            proposal.approved.includes(currentUser) ||
+            proposal.rejected.includes(currentUser)
+        ) {
+            return;
+        }
+
+        proposal.approved.push(currentUser);
+
+        proposal.pendingUsers =
+            proposal.pendingUsers.filter(
+                u => u !== currentUser
+            );
+
+        processVoting(proposal);
+
+        const updateData = {
+            approved: proposal.approved,
+            pendingUsers: proposal.pendingUsers,
+            status: proposal.status,
+            participants:
+                proposal.participants || []
+        };
+
+        if (proposal.approvedAt) {
+            updateData.approvedAt =
+                proposal.approvedAt;
+        }
+
+        await firebaseUpdateProposal(
+            proposal.firestoreId,
+            updateData
+        );
+
+        if (proposal.status === "approved") {
+            await notifyNewCalendarEvent(
+                proposal.type,
+                proposal.date,
+                proposal.location
+            );
+        }
+
+        await refreshLists();
+    } catch (error) {
+        console.error(
+            "Chyba při schvalování návrhu:",
+            error
+        );
+
+        alert(
+            "Schválení se nepodařilo uložit. " +
+            "Zkus to prosím znovu."
+        );
+
+        await refreshLists();
     }
-
-    proposal.approved.push(currentUser);
-
-	if (proposal.pendingUsers) {
-
-	    proposal.pendingUsers =
-	        proposal.pendingUsers.filter(
-	            u => u !== currentUser
-	        );
-	}
-
-    processVoting(proposal);
-
-await firebaseUpdateProposal(
-    proposal.firestoreId,
-    {
-        approved: proposal.approved,
-        pendingUsers: proposal.pendingUsers,
-        status: proposal.status,
-        participants: proposal.participants,
-        approvedAt: proposal.approvedAt
-    }
-);
-
-if (
-    proposal.status === "approved"
-) {
-    await notifyNewCalendarEvent(
-        proposal.type,
-        proposal.date,
-        proposal.location
-    );
-}
-
-refreshLists();
 }
 
 /* ===========================
@@ -488,46 +586,72 @@ refreshLists();
 =========================== */
 
 async function reject(id) {
-
     if (!requireLogin()) return;
 
-const proposal =
-    proposalsFromFirebase.find(
-        p =>
-            p.firestoreId === id
-    );
+    try {
+        const proposal =
+            proposalsFromFirebase.find(
+                p => p.firestoreId === id
+            );
 
-    if (!proposal) return;
+        if (!proposal) {
+            alert(
+                "Návrh nebyl nalezen. " +
+                "Seznam bude obnoven."
+            );
+            await refreshLists();
+            return;
+        }
 
-    if (
-        proposal.approved.includes(currentUser) ||
-        proposal.rejected.includes(currentUser)
-    ) {
-        return;
+        proposal.approved =
+            proposal.approved || [];
+
+        proposal.rejected =
+            proposal.rejected || [];
+
+        proposal.pendingUsers =
+            proposal.pendingUsers || [];
+
+        if (
+            proposal.approved.includes(currentUser) ||
+            proposal.rejected.includes(currentUser)
+        ) {
+            return;
+        }
+
+        proposal.rejected.push(currentUser);
+
+        proposal.pendingUsers =
+            proposal.pendingUsers.filter(
+                u => u !== currentUser
+            );
+
+        processVoting(proposal);
+
+        await firebaseUpdateProposal(
+            proposal.firestoreId,
+            {
+                rejected: proposal.rejected,
+                pendingUsers:
+                    proposal.pendingUsers,
+                status: proposal.status
+            }
+        );
+
+        await refreshLists();
+    } catch (error) {
+        console.error(
+            "Chyba při zamítnutí návrhu:",
+            error
+        );
+
+        alert(
+            "Zamítnutí se nepodařilo uložit. " +
+            "Zkus to prosím znovu."
+        );
+
+        await refreshLists();
     }
-
-    proposal.rejected.push(currentUser);
-
-	if (proposal.pendingUsers) {
-
-	    proposal.pendingUsers =
-	        proposal.pendingUsers.filter(
-	            u => u !== currentUser
-	        );
-	}
-
-    processVoting(proposal);
-
-await firebaseUpdateProposal(
-    proposal.firestoreId,
-    {
-        rejected: proposal.rejected,
-        pendingUsers: proposal.pendingUsers,
-        status: proposal.status
-    }
-);
-
-    refreshLists();
 }
 
 /* ===========================
