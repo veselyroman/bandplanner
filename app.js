@@ -77,6 +77,41 @@ function startProposalsListener() {
     );
 }
 
+function startVisibilityRefresh() {
+    document.addEventListener(
+        "visibilitychange",
+        async () => {
+            if (
+                document.visibilityState !== "visible" ||
+                !currentUser
+            ) {
+                return;
+            }
+
+            try {
+                await refreshLists();
+
+                const filesSection =
+                    document.getElementById(
+                        "filesSection"
+                    );
+
+                if (
+                    filesSection &&
+                    filesSection.style.display !== "none"
+                ) {
+                    await refreshFiles();
+                }
+            } catch (error) {
+                console.error(
+                    "Chyba při obnovení aplikace po návratu:",
+                    error
+                );
+            }
+        }
+    );
+}
+
 /* ===========================
    LOGIN
 =========================== */
@@ -2588,3 +2623,5 @@ async function notifyNewCalendarEvent(
         encodeURIComponent(location)
     );
 }
+
+startVisibilityRefresh();
