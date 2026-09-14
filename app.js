@@ -1540,7 +1540,7 @@ localStorage.setItem(
     "bandplanner_calendar_exports",
     JSON.stringify(exportedEvents)
 );
-refreshLists();
+
 
 }
 
@@ -1629,7 +1629,7 @@ localStorage.setItem(
     JSON.stringify(exportedProposals)
 );
 
-refreshLists();
+
 
     URL.revokeObjectURL(url);
 }
@@ -1888,7 +1888,8 @@ const usersCount =
 
         if (
 
-            p.status === "pending" &&
+            (p.status === "pending" ||
+             p.status === "waiting_for_author") &&
 
             (voted || p.createdBy === currentUser)
 
@@ -1917,9 +1918,12 @@ const usersCount =
 
                     <br><br>
 
-                    Čeká na:
-
-                    ${waiting.join(", ") || "nikoho"}
+                    ${
+                        p.status === "waiting_for_author"
+                            ? "⏳ Čeká na rozhodnutí autora"
+                            : "Čeká na: " +
+                              (waiting.join(", ") || "nikoho")
+                    }
 
                 </div>
 
