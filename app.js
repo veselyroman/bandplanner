@@ -7,6 +7,10 @@ let proposalsFromFirebase = [];
 let proposalsListenerStarted = false;
 let proposalsRefreshRunning = false;
 let proposalsRefreshPending = false;
+let listsRefreshPromise = null;
+let listsRefreshRequested = false;
+let filesRefreshPromise = null;
+let filesRefreshRequested = false;
 
 function formatDateWithDay(dateString) {
     const date = new Date(dateString);
@@ -61,26 +65,14 @@ function startProposalsListener() {
                 return;
             }
 
-            if (proposalsRefreshRunning) {
-                proposalsRefreshPending = true;
-                return;
+            try {
+                await refreshLists();
+            } catch (error) {
+                console.error(
+                    "Chyba při automatickém obnovení návrhů:",
+                    error
+                );
             }
-
-            do {
-                proposalsRefreshPending = false;
-                proposalsRefreshRunning = true;
-
-                try {
-                    await refreshLists();
-                } catch (error) {
-                    console.error(
-                        "Chyba při automatickém obnovení návrhů:",
-                        error
-                    );
-                } finally {
-                    proposalsRefreshRunning = false;
-                }
-            } while (proposalsRefreshPending);
         }
     );
 }
@@ -1100,6 +1092,15 @@ usersFromFirebase.forEach(user => {
 
 		</button>
 
+        <button
+            onclick="
+                adminChangePassword(
+                    '${user.username}'
+                )
+            ">
+            Změnit heslo
+        </button>
+
 	    </div>
 	`;
     });
@@ -1284,6 +1285,64 @@ refreshLists();
     alert(
         "Uživatel odstraněn."
     );
+}
+
+/* ===========================
+   ADMIN ZMĚNÍ HESLO UŽIVATELE
+=========================== */
+
+async function adminChangePassword(username) {
+    if (!requireLogin()) return;
+
+    if (currentUserRole !== "admin") {
+        alert("Heslo může měnit pouze administrátor.");
+        return;
+    }
+
+    const password1 = prompt(
+        "Zadej nové heslo pro uživatele " + username + ":"
+    );
+
+    if (password1 === null) return;
+
+    if (!password1) {
+        alert("Nové heslo nesmí být prázdné.");
+        return;
+    }
+
+    const password2 = prompt(
+        "Zadej nové heslo ještě jednou pro kontrolu:"
+    );
+
+    if (password2 === null) return;
+
+    if (password1 !== password2) {
+        alert("Hesla se neshodují.");
+        return;
+    }
+
+    try {
+        await firebaseUpdatePassword(
+            username,
+            password1
+        );
+
+        alert(
+            "Heslo uživatele " +
+            username +
+            " bylo změněno."
+        );
+    } catch (error) {
+        console.error(
+            "Chyba při změně hesla uživatele:",
+            error
+        );
+
+        alert(
+            "Heslo se nepodařilo změnit. " +
+            "Zkus to prosím znovu."
+        );
+    }
 }
 
 /* ===========================
@@ -1637,6 +1696,27 @@ if (
 }
 
 async function refreshLists() {
+    listsRefreshRequested = true;
+
+    if (listsRefreshPromise) {
+        return listsRefreshPromise;
+    }
+
+    listsRefreshPromise = (async () => {
+        while (listsRefreshRequested) {
+            listsRefreshRequested = false;
+            await refreshListsNow();
+        }
+    })();
+
+    try {
+        await listsRefreshPromise;
+    } finally {
+        listsRefreshPromise = null;
+    }
+}
+
+async function refreshListsNow() {
 
     const mineList =
         document.getElementById("mineList");
@@ -1695,6 +1775,18 @@ for (const p of proposalsFromFirebase) {
 
 proposalsFromFirebase =
     await firebaseGetProposals();
+
+proposalsFromFirebase =
+    Array.from(
+        new Map(
+            proposalsFromFirebase.map(
+                proposal => [
+                    proposal.firestoreId,
+                    proposal
+                ]
+            )
+        ).values()
+    );
 
 const usersFromFirebase =
     await firebaseGetUsers();
@@ -2177,73 +2269,98 @@ await notifyNewFile(
 }
 
 async function refreshFiles() {
+    filesRefreshRequested = true;
 
+    if (filesRefreshPromise) {
+        return filesRefreshPromise;
+    }
+
+    filesRefreshPromise = (async () => {
+        while (filesRefreshRequested) {
+            filesRefreshRequested = false;
+            await refreshFilesNow();
+        }
+    })();
+
+    try {
+        await filesRefreshPromise;
+    } finally {
+        filesRefreshPromise = null;
+    }
+}
+
+async function refreshFilesNow() {
     const filesList =
         document.getElementById(
             "filesList"
         );
 
-    filesList.innerHTML = "";
+    try {
+        const files =
+            await firebaseGetFiles();
 
-    const files =
-        await firebaseGetFiles();
+        let html = "";
 
-    files
-        .sort((a, b) =>
-            b.uploadedAt.localeCompare(
-                a.uploadedAt
+        files
+            .sort((a, b) =>
+                (b.uploadedAt || "").localeCompare(
+                    a.uploadedAt || ""
+                )
             )
-        )
-        .forEach(file => {
+            .forEach(file => {
+                html += `
+                    <div class="proposal">
+                        <b>${file.filename}</b>
+                        <br>
+                        Autor: ${file.uploadedBy}
+                        <br>
+                        Popis: ${file.description || "-"}
+                        <br><br>
+                        <a
+                            href="${file.downloadUrl}"
+                            target="_blank">
+                            Stáhnout
+                        </a>
+                        ${
+                            currentUserRole === "admin" ||
+                            file.uploadedBy === currentUser
+                                ? `
+                                    <br><br>
+                                    <button
+                                        class="reject"
+                                        onclick="
+                                            deleteFile(
+                                                '${file.firestoreId}',
+                                                '${file.storagePath}'
+                                            )
+                                        ">
+                                        Smazat
+                                    </button>
+                                  `
+                                : ""
+                        }
+                    </div>
+                `;
+            });
 
-            filesList.innerHTML += `
-                <div class="proposal">
+        filesList.innerHTML =
+            html ||
+            `<div class="info">Zatím zde nejsou žádné soubory.</div>`;
+    } catch (error) {
+        console.error(
+            "Chyba při načítání souborů:",
+            error
+        );
 
-                    <b>
-                        ${file.filename}
-                    </b>
-
-                    <br>
-
-                    Autor:
-                    ${file.uploadedBy}
-
-                    <br>
-
-                    Popis:
-                    ${file.description || "-"}
-
-                    <br><br>
-
-<a
-    href="${file.downloadUrl}"
-    target="_blank">
-    Stáhnout
-</a>
-${
-    currentUserRole === "admin" ||
-    file.uploadedBy === currentUser
-        ? `
-            <br><br>
-            <button
-                class="reject"
-                onclick="
-                    deleteFile(
-                        '${file.firestoreId}',
-                        '${file.storagePath}'
-                    )
-                ">
-                Smazat
-            </button>
-          `
-        : ""
-}
-
+        if (!filesList.innerHTML.trim()) {
+            filesList.innerHTML = `
+                <div class="info">
+                    Soubory se nepodařilo načíst.
+                    Zkus tuto část otevřít znovu.
                 </div>
             `;
-
-        });
-
+        }
+    }
 }
 
 async function deleteFile(
