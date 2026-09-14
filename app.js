@@ -1491,7 +1491,10 @@ await firebaseUpdatePassword(
    OBNOVENÍ SEZNAMŮ
 =========================== */
 
-function downloadCalendarEvent(id) {
+function downloadCalendarEvent(
+	id,
+	button
+	) {
 
 const proposal =
     proposalsFromFirebase.find(
@@ -1576,10 +1579,23 @@ localStorage.setItem(
     JSON.stringify(exportedEvents)
 );
 
+if (button) {
+    const info =
+        document.createElement("div");
+
+    info.className = "info";
+    info.innerHTML =
+        "✅ Zřejmě jsi si už přidal do kalendáře.";
+
+    button.replaceWith(info);
+}
 
 }
 
-function downloadProposalToCalendar(id) {
+function downloadProposalToCalendar(
+	id,
+	button
+	) {
 
     const proposal =
         proposalsFromFirebase.find(
@@ -1664,9 +1680,18 @@ localStorage.setItem(
     JSON.stringify(exportedProposals)
 );
 
+if (button) {
+    const info =
+        document.createElement("div");
 
+    info.className = "info";
+    info.innerHTML =
+        "✅ Zřejmě jsi si už přidal návrh do kalendáře.";
 
-    URL.revokeObjectURL(url);
+    button.replaceWith(info);
+}
+
+URL.revokeObjectURL(url);
 }
 
 function refreshTabNotifications() {
@@ -1979,15 +2004,16 @@ exportedProposals[currentUser].includes(
         </div>
       `
     : `
-        <button
-            class="approve"
-            onclick="
-                downloadProposalToCalendar(
-                    '${p.firestoreId}'
-                )
-            ">
-            📅 Přidat návrh do kalendáře
-        </button>
+<button
+    class="approve"
+    onclick="
+        downloadProposalToCalendar(
+            '${p.firestoreId}',
+            this
+        )
+    ">
+    📅 Přidat návrh do kalendáře
+</button>
       `
 }
 
@@ -2185,11 +2211,16 @@ exportedEvents[currentUser].includes(
             </div>
           `
         : `
-            <button
-                class="approve"
-                onclick="downloadCalendarEvent('${p.firestoreId}')">
-                📅 Přidat do kalendáře
-            </button>
+<button
+    class="approve"
+    onclick="
+        downloadCalendarEvent(
+            '${p.firestoreId}',
+            this
+        )
+    ">
+    📅 Přidat do kalendáře
+</button>
           `
 }
 <br><br>
