@@ -1779,11 +1779,6 @@ const exportedProposals =
     const calendarList =
 	    document.getElementById("calendarList");
 
-	mineList.innerHTML = "";
-	othersList.innerHTML = "";
-	authorList.innerHTML = "";
-	calendarList.innerHTML = "";
-
 proposalsFromFirebase =
     await firebaseGetProposals();
 
@@ -1828,6 +1823,15 @@ const usersFromFirebase =
 
 const usersCount =
     usersFromFirebase.length;
+
+/*
+ * Seznamy vymažeme až poté, co jsou všechna data
+ * úspěšně načtena.
+ */
+mineList.innerHTML = "";
+othersList.innerHTML = "";
+authorList.innerHTML = "";
+calendarList.innerHTML = "";
 
 [...proposalsFromFirebase]
     .sort((a, b) => {
