@@ -201,8 +201,28 @@
 <div class="proposal">
 <h4>Předpokládaná nepřítomnost</h4>
 <div class="info">Dovolená, práce nebo jiná aktivita</div><br>
-<label for="absenceFromDate">Od:</label> <input id="absenceFromDate" type="date"> <input id="absenceFromTime" type="time" value="00:00"><br><br>
-<label for="absenceToDate">Do:</label> <input id="absenceToDate" type="date"> <input id="absenceToTime" type="time" value="23:59"><br><br>
+<div style="margin-bottom:10px;">
+    <label for="absenceFromDate">
+        Od:
+    </label>
+    <input id="absenceFromDate" type="date">
+    <input
+        id="absenceFromTime"
+        type="time"
+        value="00:00">
+</div>
+
+<div style="margin-bottom:10px;">
+    <label for="absenceToDate">
+        Do:
+    </label>
+    <input id="absenceToDate" type="date">
+    <input
+        id="absenceToTime"
+        type="time"
+        value="23:59">
+</div>
+<br><br>
 <button class="approve" onclick="saveAbsence()">Uložit nepřítomnost</button><br><br>
 <div id="absenceList"></div>
 </div><br><br>

@@ -1564,8 +1564,11 @@ async function refreshAbsences() {
             <div class="info" style="margin-bottom:10px;">
                 ${formatDateTime(a.from)} - ${formatDateTime(a.to)}
                 <div style="text-align:right; margin-top:8px;">
-                    <button class="reject" style="font-size:12px; padding:5px 9px; opacity:0.8;"
-                        onclick="deleteAbsence('${a.firestoreId}')">Smazat</button>
+<button
+    class="reject"
+    onclick="deleteAbsence('${a.firestoreId}')">
+    Smazat
+</button>
                 </div>
             </div>`).join("");
     } catch (error) {
@@ -2494,7 +2497,7 @@ async function refreshFilesNow() {
                             file.uploadedBy === currentUser
                                 ? `
                                     <div style="text-align:right; margin-top:8px;">
-                                        <button class="reject"
+                                        <button class="reject file-delete-button"
                                             style="font-size:12px; padding:5px 9px; opacity:0.8;"
                                             data-firestore-id="${encodeURIComponent(file.firestoreId)}"
                                             data-storage-path="${encodeURIComponent(file.storagePath)}"
