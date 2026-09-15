@@ -163,6 +163,24 @@ window.firebaseDeleteUser = async function (
         );
 
     }
+
+    const absencesQuery = query(
+        collection(db, "plannedAbsences"),
+        where("username", "==", username)
+    );
+
+    const absencesSnapshot =
+        await getDocs(absencesQuery);
+
+    for (const absence of absencesSnapshot.docs) {
+        await deleteDoc(
+            doc(
+                db,
+                "plannedAbsences",
+                absence.id
+            )
+        );
+    }
 };
 
 window.firebaseUpdateRole = async function (
@@ -628,6 +646,19 @@ async function (username) {
 
     return !snapshot.empty;
 
+};
+
+window.firebaseAddAbsence = async absence => addDoc(collection(db, "plannedAbsences"), absence);
+window.firebaseGetAbsences = async function () {
+ const snapshot = await getDocs(collection(db, "plannedAbsences"));
+ return snapshot.docs.map(item => ({ firestoreId: item.id, ...item.data() }));
+};
+window.firebaseDeleteAbsence = async id => deleteDoc(doc(db, "plannedAbsences", id));
+window.firebaseCleanupOldAbsences = async function () {
+ const now = new Date();
+ for (const absence of await firebaseGetAbsences()) {
+  if (new Date(absence.to) < now) await firebaseDeleteAbsence(absence.firestoreId);
+ }
 };
 
 async function hashPassword(

@@ -306,6 +306,8 @@ if (section === "profile") {
 
     refreshProfile();
 
+    await refreshAbsences();
+
     refreshPushStatus();
 
 }
@@ -425,24 +427,42 @@ if (startTime >= endTime) {
     return;
 }
 
-const duplicate =
-    proposalsFromFirebase.find(p =>
-        p.status !== "cancelled" &&
-        p.type === type &&
-        p.date === date &&
-        p.startTime === startTime &&
-        p.endTime === endTime &&
-        p.location === location
-    );
+const eventStart = new Date(`${date}T${startTime}`);
+const eventEnd = new Date(`${date}T${endTime}`);
 
-	if (duplicate) {
+const overlappingEvents = proposalsFromFirebase.filter(p => {
+    if (p.status === "cancelled" || p.date !== date) return false;
+    const existingStart = new Date(`${p.date}T${p.startTime}`);
+    const existingEnd = new Date(`${p.date}T${p.endTime}`);
+    return eventStart < existingEnd && eventEnd > existingStart;
+});
 
-	    alert(
-	        "Taková akce již existuje."
-	    );
+let absenceConflicts = [];
+try {
+    await firebaseCleanupOldAbsences();
+    absenceConflicts = (await firebaseGetAbsences())
+        .filter(a => eventStart < new Date(a.to) && eventEnd > new Date(a.from))
+        .sort((a, b) => a.username.localeCompare(b.username, "cs"));
+} catch (error) {
+    console.error("Chyba při kontrole nepřítomností:", error);
+    alert("Nepodařilo se ověřit plánované nepřítomnosti. Návrh zatím nebyl uložen. Zkus to prosím znovu.");
+    return;
+}
 
-	    return;
-	}
+const warnings = [];
+if (overlappingEvents.length) {
+    warnings.push("Ve stejném čase již existuje:\n\n" + overlappingEvents.map(p =>
+        `${p.type} | ${formatDateWithDay(p.date)} | ${p.startTime} - ${p.endTime} | ${p.location}`
+    ).join("\n"));
+}
+if (absenceConflicts.length) {
+    warnings.push("Plánované nepřítomnosti:\n\n" + absenceConflicts.map(a =>
+        `${a.username} zřejmě nebude k dispozici do ${formatDateTime(a.to)}.`
+    ).join("\n"));
+}
+if (warnings.length && !confirm("Pozor!\n\n" + warnings.join("\n\n") + "\n\nChceš návrh přesto uložit?")) {
+    return;
+}
 
 const usersFromFirebase =
     await firebaseGetUsers();
@@ -1491,6 +1511,80 @@ await firebaseUpdatePassword(
    OBNOVENÍ SEZNAMŮ
 =========================== */
 
+function formatDateTime(dateTimeString) {
+    return new Date(dateTimeString).toLocaleString("cs-CZ", {
+        dateStyle: "medium",
+        timeStyle: "short"
+    });
+}
+
+async function saveAbsence() {
+    if (!requireLogin()) return;
+    const fromDate = document.getElementById("absenceFromDate").value;
+    const fromTime = document.getElementById("absenceFromTime").value;
+    const toDate = document.getElementById("absenceToDate").value;
+    const toTime = document.getElementById("absenceToTime").value;
+    if (!fromDate || !fromTime || !toDate || !toTime) {
+        alert("Vyplň datum a čas od i do.");
+        return;
+    }
+    const from = `${fromDate}T${fromTime}`;
+    const to = `${toDate}T${toTime}`;
+    if (new Date(from) >= new Date(to)) {
+        alert("Konec nepřítomnosti musí být později než začátek.");
+        return;
+    }
+    try {
+        await firebaseAddAbsence({ username: currentUser, from, to, createdAt: new Date().toISOString() });
+        document.getElementById("absenceFromDate").value = "";
+        document.getElementById("absenceFromTime").value = "00:00";
+        document.getElementById("absenceToDate").value = "";
+        document.getElementById("absenceToTime").value = "23:59";
+        await refreshAbsences();
+        alert("Nepřítomnost byla uložena.");
+    } catch (error) {
+        console.error("Chyba při ukládání nepřítomnosti:", error);
+        alert("Nepřítomnost se nepodařilo uložit.");
+    }
+}
+
+async function refreshAbsences() {
+    const list = document.getElementById("absenceList");
+    if (!list || !currentUser) return;
+    try {
+        await firebaseCleanupOldAbsences();
+        const absences = (await firebaseGetAbsences())
+            .filter(a => a.username === currentUser)
+            .sort((a, b) => new Date(a.from) - new Date(b.from));
+        if (!absences.length) {
+            list.innerHTML = `<div class="info">Nemáš zadanou žádnou plánovanou nepřítomnost.</div>`;
+            return;
+        }
+        list.innerHTML = `<b>Moje plánované nepřítomnosti:</b><br><br>` + absences.map(a => `
+            <div class="info" style="margin-bottom:10px;">
+                ${formatDateTime(a.from)} - ${formatDateTime(a.to)}
+                <div style="text-align:right; margin-top:8px;">
+                    <button class="reject" style="font-size:12px; padding:5px 9px; opacity:0.8;"
+                        onclick="deleteAbsence('${a.firestoreId}')">Smazat</button>
+                </div>
+            </div>`).join("");
+    } catch (error) {
+        console.error("Chyba při načítání nepřítomností:", error);
+        list.innerHTML = `<div class="info">Nepřítomnosti se nepodařilo načíst.</div>`;
+    }
+}
+
+async function deleteAbsence(firestoreId) {
+    if (!confirm("Opravdu chceš tuto plánovanou nepřítomnost smazat?")) return;
+    try {
+        await firebaseDeleteAbsence(firestoreId);
+        await refreshAbsences();
+    } catch (error) {
+        console.error("Chyba při mazání nepřítomnosti:", error);
+        alert("Nepřítomnost se nepodařilo smazat.");
+    }
+}
+
 function downloadCalendarEvent(
 	id,
 	button
@@ -2399,17 +2493,16 @@ async function refreshFilesNow() {
                             currentUserRole === "admin" ||
                             file.uploadedBy === currentUser
                                 ? `
-                                    <br><br>
-                                    <button
-                                        class="reject"
-                                        onclick="
-                                            deleteFile(
-                                                '${file.firestoreId}',
-                                                '${file.storagePath}'
-                                            )
-                                        ">
-                                        Smazat
-                                    </button>
+                                    <div style="text-align:right; margin-top:8px;">
+                                        <button class="reject"
+                                            style="font-size:12px; padding:5px 9px; opacity:0.8;"
+                                            data-firestore-id="${encodeURIComponent(file.firestoreId)}"
+                                            data-storage-path="${encodeURIComponent(file.storagePath)}"
+                                            data-file-name="${encodeURIComponent(file.filename)}"
+                                            onclick="deleteFileFromButton(this)">
+                                            Smazat
+                                        </button>
+                                    </div>
                                   `
                                 : ""
                         }
@@ -2437,14 +2530,38 @@ async function refreshFilesNow() {
     }
 }
 
+function deleteFileFromButton(button) {
+    const firestoreId =
+        decodeURIComponent(
+            button.dataset.firestoreId
+        );
+    const storagePath =
+        decodeURIComponent(
+            button.dataset.storagePath
+        );
+    const fileName =
+        decodeURIComponent(
+            button.dataset.fileName
+        );
+
+    deleteFile(
+        firestoreId,
+        storagePath,
+        fileName
+    );
+}
+
 async function deleteFile(
     firestoreId,
-    storagePath
+    storagePath,
+    fileName
 ) {
 
     const confirmed =
         confirm(
-            "Opravdu chceš soubor odstranit?"
+            "Opravdu chceš odstranit soubor:\n\n" +
+            fileName +
+            "\n\nTuto akci nelze vrátit zpět."
         );
 
     if (!confirmed) {
