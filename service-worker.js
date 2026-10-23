@@ -43,7 +43,7 @@ messaging.onBackgroundMessage(
     }
 );
 
-const CACHE_NAME = "bandplanner-v48";
+const CACHE_NAME = "bandplanner-v49";
 
 const urlsToCache = [
     "./",

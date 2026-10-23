@@ -2401,12 +2401,12 @@ async function uploadFile() {
     }
 
     const maxSize =
-        20 * 1024 * 1024;
+        700 * 1024 * 1024;
 
     if (file.size > maxSize) {
 
         alert(
-            "Maximální velikost souboru je 20 MB."
+            "Maximální velikost souboru je 700 MB."
         );
 
         return;
