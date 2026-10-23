@@ -16,7 +16,7 @@ import {
 import {
     getStorage,
     ref,
-    uploadBytes,
+    uploadBytesResumable,
     getDownloadURL,
     deleteObject
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
@@ -318,9 +318,9 @@ window.firebaseUploadFile =
 async function (
     file,
     description,
-    uploadedBy
+    uploadedBy,
+    onProgress
 ) {
-
     const storagePath =
         "files/" +
         Date.now() +
@@ -333,9 +333,47 @@ async function (
             storagePath
         );
 
-    await uploadBytes(
-        storageRef,
-        file
+    const uploadTask =
+        uploadBytesResumable(
+            storageRef,
+            file
+        );
+
+    await new Promise(
+        (resolve, reject) => {
+            uploadTask.on(
+                "state_changed",
+
+                snapshot => {
+                    if (
+                        typeof onProgress ===
+                        "function"
+                    ) {
+                        onProgress({
+                            bytesTransferred:
+                                snapshot.bytesTransferred,
+                            totalBytes:
+                                snapshot.totalBytes,
+                            progress:
+                                snapshot.totalBytes > 0
+                                    ? (
+                                        snapshot.bytesTransferred /
+                                        snapshot.totalBytes
+                                      ) * 100
+                                    : 0
+                        });
+                    }
+                },
+
+                error => {
+                    reject(error);
+                },
+
+                () => {
+                    resolve();
+                }
+            );
+        }
     );
 
     const downloadUrl =
@@ -354,12 +392,11 @@ async function (
             uploadedBy,
             uploadedAt:
                 new Date().toISOString(),
-		size:file.size,
+            size: file.size,
             storagePath,
             downloadUrl
         }
     );
-
 };
 
 window.firebaseGetFiles =

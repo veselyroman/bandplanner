@@ -2379,64 +2379,181 @@ exportedEvents[currentUser].includes(
 }
 
 async function uploadFile() {
-
-    const file =
+    const fileInput =
         document.getElementById(
             "fileUpload"
-        ).files[0];
+        );
 
-    const description =
+    const file =
+        fileInput.files[0];
+
+    const descriptionInput =
         document.getElementById(
             "fileDescription"
-        ).value.trim();
+        );
+
+    const description =
+        descriptionInput.value.trim();
+
+    const uploadButton =
+        document.getElementById(
+            "uploadFileButton"
+        );
+
+    const progressContainer =
+        document.getElementById(
+            "uploadProgressContainer"
+        );
+
+    const progressBar =
+        document.getElementById(
+            "uploadProgressBar"
+        );
+
+    const progressText =
+        document.getElementById(
+            "uploadProgressText"
+        );
+
+    const progressDetails =
+        document.getElementById(
+            "uploadProgressDetails"
+        );
 
     if (!file) {
-
         alert(
             "Vyber soubor."
         );
-
         return;
-
     }
 
     const maxSize =
         700 * 1024 * 1024;
 
     if (file.size > maxSize) {
-
         alert(
             "Maximální velikost souboru je 700 MB."
         );
-
         return;
-
     }
 
-    await firebaseUploadFile(
-        file,
-        description,
-        currentUser
+    uploadButton.disabled = true;
+    uploadButton.innerText =
+        "Nahrávám…";
+
+    fileInput.disabled = true;
+    descriptionInput.disabled = true;
+
+    progressContainer.style.display =
+        "block";
+
+    progressBar.value = 0;
+
+    progressText.innerText =
+        "Nahrávání: 0 %";
+
+    progressDetails.innerText =
+        "0 MB z " +
+        formatFileSizeInMB(file.size);
+
+    try {
+        await firebaseUploadFile(
+            file,
+            description,
+            currentUser,
+            progress => {
+                const percent =
+                    Math.min(
+                        100,
+                        Math.round(
+                            progress.progress
+                        )
+                    );
+
+                progressBar.value =
+                    percent;
+
+                progressText.innerText =
+                    "Nahrávání: " +
+                    percent +
+                    " %";
+
+                progressDetails.innerText =
+                    formatFileSizeInMB(
+                        progress.bytesTransferred
+                    ) +
+                    " z " +
+                    formatFileSizeInMB(
+                        progress.totalBytes
+                    );
+            }
+        );
+
+        progressBar.value = 100;
+
+        progressText.innerText =
+            "Nahrávání dokončeno";
+
+        progressDetails.innerText =
+            formatFileSizeInMB(file.size) +
+            " z " +
+            formatFileSizeInMB(file.size);
+
+        await notifyNewFile(
+            file.name
+        );
+
+        fileInput.value = "";
+        descriptionInput.value = "";
+
+        alert(
+            "Soubor byl nahrán."
+        );
+
+        await refreshFiles();
+
+    } catch (error) {
+        console.error(
+            "Chyba při nahrávání souboru:",
+            error
+        );
+
+        progressText.innerText =
+            "Nahrávání se nezdařilo.";
+
+        progressDetails.innerText =
+            "";
+
+        alert(
+            "Soubor se nepodařilo nahrát. " +
+            "Zkontroluj připojení a zkus to znovu."
+        );
+
+    } finally {
+        uploadButton.disabled = false;
+        uploadButton.innerText =
+            "Nahrát soubor";
+
+        fileInput.disabled = false;
+        descriptionInput.disabled = false;
+    }
+}
+
+function formatFileSizeInMB(bytes) {
+    const megabytes =
+        bytes / 1024 / 1024;
+
+    if (megabytes >= 100) {
+        return (
+            megabytes.toFixed(0) +
+            " MB"
+        );
+    }
+
+    return (
+        megabytes.toFixed(1) +
+        " MB"
     );
-
-await notifyNewFile(
-    file.name
-);
-
-    document.getElementById(
-        "fileUpload"
-    ).value = "";
-
-    document.getElementById(
-        "fileDescription"
-    ).value = "";
-
-    alert(
-        "Soubor byl nahrán."
-    );
-
-    refreshFiles();
-
 }
 
 async function refreshFiles() {
